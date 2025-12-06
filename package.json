@@ -1,0 +1,23 @@
+{
+  "name": "cloakgate",
+  "version": "1.0.0",
+  "description": "Clash 订阅分发服务，支持 Token 验证和滑动窗口 IP 并发控制",
+  "type": "module",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js"
+  },
+  "keywords": ["clash", "subscription", "proxy"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@koa/router": "^13.1.0",
+    "better-sqlite3": "^11.6.0",
+    "js-yaml": "^4.1.0",
+    "koa": "^2.15.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}
