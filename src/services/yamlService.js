@@ -4,6 +4,7 @@
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import yaml from 'js-yaml'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -43,9 +44,9 @@ export function renderSubYaml(token) {
  * @returns {string} 节点列表 YAML
  */
 export function generateProxiesYaml(nodeProfile = 'default') {
-  // 第一版：硬编码测试节点
+  // 第一版：硬编码测试节点（原始数据）
   // 后续可以根据 nodeProfile 从数据库或配置文件加载不同节点集
-  const proxies = [
+  const rawProxies = [
     {
       name: 'United States | 01-miiokapvuser',
       server: 'lucky.starying.top',
@@ -129,26 +130,42 @@ export function generateProxiesYaml(nodeProfile = 'default') {
     },
   ]
 
-  // 转换为 YAML 格式
-  const yamlLines = ['proxies:']
-  for (const proxy of proxies) {
-    yamlLines.push(`  - name: "${proxy.name}"`)
-    yamlLines.push(`    type: ${proxy.type}`)
-    yamlLines.push(`    server: ${proxy.server}`)
-    yamlLines.push(`    port: ${proxy.port}`)
-    yamlLines.push(`    uuid: ${proxy.uuid}`)
-    yamlLines.push(`    network: ${proxy.network}`)
-    yamlLines.push(`    tls: ${proxy.tls}`)
-    yamlLines.push(`    udp: ${proxy.udp}`)
-    if (proxy['ws-opts']) {
-      yamlLines.push('    ws-opts:')
-      yamlLines.push(`      path: ${proxy['ws-opts'].path}`)
-      yamlLines.push('      headers:')
-      yamlLines.push(`        Host: ${proxy['ws-opts'].headers.Host}`)
+  // 转换为 Clash.Meta 兼容的格式
+  const clashProxies = rawProxies.map((p) => {
+    const item = {
+      name: p.name,
+      type: 'vless',
+      server: p.server,
+      port: p.port,
+      uuid: p.uuid,
+      tls: true,
+      servername: p.servername || p.host,
+      'client-fingerprint': p.clientFingerprint || 'random',
     }
-  }
 
-  return yamlLines.join('\n')
+    // 添加 flow（如果存在）
+    if (p.flow) {
+      item.flow = p.flow
+    }
+
+    // 添加 reality-opts（使用 Clash 要求的 dash-case 字段名）
+    if (p.realityOpts) {
+      item['reality-opts'] = {
+        'public-key': p.realityOpts.publicKey,
+        'short-id': p.realityOpts.shortId,
+      }
+    }
+
+    return item
+  })
+
+  // 使用 js-yaml 生成正确的 YAML 格式
+  return yaml.dump({ proxies: clashProxies }, { 
+    indent: 2,
+    lineWidth: -1, // 不换行
+    quotingType: '"',
+    forceQuotes: false
+  })
 }
 
 /**
@@ -158,3 +175,4 @@ export function generateProxiesYaml(nodeProfile = 'default') {
 export function generateEmptyProxiesYaml() {
   return 'proxies: []'
 }
+
