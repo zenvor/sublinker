@@ -1,0 +1,70 @@
+// /provider 路由
+// 返回节点列表 YAML，同时执行 IP 并发控制
+
+import Router from '@koa/router';
+import { getToken, isTokenValid } from '../services/tokenService.js';
+import { updateAndCheck, getActiveIps } from '../services/ipTracker.js';
+import { generateProxiesYaml, generateEmptyProxiesYaml } from '../services/yamlService.js';
+
+const router = new Router();
+
+/**
+ * GET /provider?token=xxx
+ * 返回节点列表 YAML（proxy-providers 请求此接口）
+ */
+router.get('/provider', async (ctx) => {
+  const { token } = ctx.query;
+
+  // 检查 token 参数
+  if (!token) {
+    ctx.status = 400;
+    ctx.type = 'application/x-yaml; charset=utf-8';
+    ctx.body = generateEmptyProxiesYaml();
+    return;
+  }
+
+  // 查询并校验 token
+  const tokenRecord = getToken(token);
+  const validation = isTokenValid(tokenRecord);
+  
+  if (!validation.valid) {
+    console.log(`[Provider] Token 校验失败: ${token} - ${validation.reason}`);
+    ctx.status = 403;
+    ctx.type = 'application/x-yaml; charset=utf-8';
+    ctx.body = generateEmptyProxiesYaml();
+    return;
+  }
+
+  // 获取客户端真实 IP
+  const clientIp = ctx.realIp || ctx.ip;
+  const userAgent = ctx.headers['user-agent'] || 'unknown';
+
+  // IP 并发控制检查
+  const allowed = updateAndCheck(token, clientIp);
+  
+  if (!allowed) {
+    // 超限：返回空节点列表
+    const activeIps = getActiveIps(token);
+    console.log(`[Provider] IP 超限: token=${token.slice(0, 8)}... ip=${clientIp} active=${activeIps.length}`);
+    ctx.type = 'application/x-yaml; charset=utf-8';
+    ctx.body = generateEmptyProxiesYaml();
+    return;
+  }
+
+  // 通过：返回真实节点列表
+  console.log(`[Provider] 允许访问: token=${token.slice(0, 8)}... ip=${clientIp} ua=${userAgent.slice(0, 30)}`);
+  
+  try {
+    const nodeProfile = tokenRecord.node_profile || 'default';
+    const yaml = generateProxiesYaml(nodeProfile);
+    ctx.type = 'application/x-yaml; charset=utf-8';
+    ctx.body = yaml;
+  } catch (err) {
+    console.error('生成节点列表失败:', err);
+    ctx.status = 500;
+    ctx.type = 'application/x-yaml; charset=utf-8';
+    ctx.body = generateEmptyProxiesYaml();
+  }
+});
+
+export default router;

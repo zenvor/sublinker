@@ -1,0 +1,13 @@
+# 依赖目录
+node_modules/
+
+# 数据目录（生产环境需要持久化）
+data/
+
+# 开发文件
+*.log
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
