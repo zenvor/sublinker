@@ -16,18 +16,18 @@ const db = new Database(dbPath);
 
 // 初始化表结构
 db.exec(`
-  CREATE TABLE IF NOT EXISTS tokens (
+  CREATE TABLE IF NOT EXISTS subscriptions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     token TEXT UNIQUE NOT NULL,
+    remark TEXT NOT NULL,
+    max_ips INTEGER DEFAULT 2,
     status TEXT NOT NULL DEFAULT 'active',
-    remark TEXT,
-    node_profile TEXT DEFAULT 'default',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     expired_at DATETIME
   );
   
-  CREATE INDEX IF NOT EXISTS idx_tokens_token ON tokens(token);
-  CREATE INDEX IF NOT EXISTS idx_tokens_status ON tokens(status);
+  CREATE INDEX IF NOT EXISTS idx_subscriptions_token ON subscriptions(token);
+  CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON subscriptions(status);
 `);
 
 console.log('数据库初始化完成:', dbPath);

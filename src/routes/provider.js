@@ -2,7 +2,7 @@
 // 返回节点列表 YAML，同时执行 IP 并发控制
 
 import Router from '@koa/router';
-import { getToken, isTokenValid } from '../services/tokenService.js';
+import { getSubscription, isSubscriptionValid } from '../services/subscriptionService.js';
 import { updateAndCheck, getActiveIps } from '../services/ipTracker.js';
 import { generateProxiesYaml, generateEmptyProxiesYaml } from '../services/yamlService.js';
 
@@ -23,12 +23,12 @@ router.get('/provider', async (ctx) => {
     return;
   }
 
-  // 查询并校验 token
-  const tokenRecord = getToken(token);
-  const validation = isTokenValid(tokenRecord);
+  // 查询并校验订阅
+  const subscription = getSubscription(token);
+  const validation = isSubscriptionValid(subscription);
   
   if (!validation.valid) {
-    console.log(`[Provider] Token 校验失败: ${token} - ${validation.reason}`);
+    console.log(`[Provider] 订阅校验失败: ${token} - ${validation.reason}`);
     ctx.status = 403;
     ctx.type = 'application/x-yaml; charset=utf-8';
     ctx.body = generateEmptyProxiesYaml();
@@ -39,13 +39,13 @@ router.get('/provider', async (ctx) => {
   const clientIp = ctx.realIp || ctx.ip;
   const userAgent = ctx.headers['user-agent'] || 'unknown';
 
-  // IP 并发控制检查
-  const allowed = updateAndCheck(token, clientIp);
+  // IP 并发控制检查（使用订阅的 max_ips 配置）
+  const allowed = updateAndCheck(token, clientIp, subscription.max_ips);
   
   if (!allowed) {
     // 超限：返回空节点列表
     const activeIps = getActiveIps(token);
-    console.log(`[Provider] IP 超限: token=${token.slice(0, 8)}... ip=${clientIp} active=${activeIps.length}`);
+    console.log(`[Provider] IP 超限: token=${token.slice(0, 8)}... ip=${clientIp} active=${activeIps.length}/${subscription.max_ips}`);
     ctx.type = 'application/x-yaml; charset=utf-8';
     ctx.body = generateEmptyProxiesYaml();
     return;
@@ -55,8 +55,8 @@ router.get('/provider', async (ctx) => {
   console.log(`[Provider] 允许访问: token=${token.slice(0, 8)}... ip=${clientIp} ua=${userAgent.slice(0, 30)}`);
   
   try {
-    const nodeProfile = tokenRecord.node_profile || 'default';
-    const yaml = generateProxiesYaml(nodeProfile);
+    // 使用默认节点配置（已移除 node_profile 字段）
+    const yaml = generateProxiesYaml('default');
     ctx.type = 'application/x-yaml; charset=utf-8';
     ctx.body = yaml;
   } catch (err) {
@@ -68,3 +68,4 @@ router.get('/provider', async (ctx) => {
 });
 
 export default router;
+
