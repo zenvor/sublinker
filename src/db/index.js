@@ -38,6 +38,23 @@ db.exec(`
   );
 `);
 
+// 数据库迁移：确保 subscriptions 表包含 max_ips 列
+// 这个迁移是为了兼容旧版本的数据库，旧版本没有 max_ips 列
+// SQLite 的 CREATE TABLE IF NOT EXISTS 不会添加缺失的列
+try {
+  // 检查 max_ips 列是否存在
+  const tableInfo = db.prepare('PRAGMA table_info(subscriptions)').all();
+  const hasMaxIpsColumn = tableInfo.some(col => col.name === 'max_ips');
+  
+  if (!hasMaxIpsColumn) {
+    console.log('检测到旧版数据库结构，正在添加 max_ips 列...');
+    db.exec('ALTER TABLE subscriptions ADD COLUMN max_ips INTEGER DEFAULT 1');
+    console.log('max_ips 列添加成功');
+  }
+} catch (error) {
+  console.error('数据库迁移失败:', error.message);
+}
+
 console.log('数据库初始化完成:', dbPath);
 
 export default db;
