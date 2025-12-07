@@ -28,6 +28,14 @@ db.exec(`
   
   CREATE INDEX IF NOT EXISTS idx_subscriptions_token ON subscriptions(token);
   CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON subscriptions(status);
+
+  CREATE TABLE IF NOT EXISTS admins (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 console.log('数据库初始化完成:', dbPath);
