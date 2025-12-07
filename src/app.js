@@ -12,7 +12,7 @@ import realIp from './middlewares/realIp.js';
 import response from './middlewares/response.js';
 import subRouter from './routes/sub.js';
 import providerRouter from './routes/provider.js';
-import adminRouter from './routes/admin.js';
+import subscriptionRouter from './routes/subscription.js';
 
 const app = new Koa();
 const router = new Router();
@@ -35,8 +35,8 @@ app.use(subRouter.routes());
 app.use(subRouter.allowedMethods());
 app.use(providerRouter.routes());
 app.use(providerRouter.allowedMethods());
-app.use(adminRouter.routes());
-app.use(adminRouter.allowedMethods());
+app.use(subscriptionRouter.routes());
+app.use(subscriptionRouter.allowedMethods());
 app.use(router.routes());
 app.use(router.allowedMethods());
 
@@ -46,7 +46,7 @@ app.listen(PORT, () => {
   console.log(`健康检查: http://localhost:${PORT}/health`);
   console.log(`订阅接口: http://localhost:${PORT}/sub?token=YOUR_TOKEN`);
   console.log(`节点接口: http://localhost:${PORT}/provider?token=YOUR_TOKEN`);
-  console.log(`管理接口: http://localhost:${PORT}/admin/token`);
+  console.log(`管理接口: http://localhost:${PORT}/admin/subscription`);
 });
 
 export default app;

@@ -3,7 +3,8 @@
 
 import Router from '@koa/router';
 import { renderSubYaml } from '../services/yamlService.js';
-import { getToken, isTokenValid } from '../services/tokenService.js';
+import { getSubscription, isSubscriptionValid } from '../services/subscriptionService.js';
+import { updateAndCheck } from '../services/ipTracker.js';
 
 const router = new Router();
 
@@ -20,12 +21,21 @@ router.get('/sub', async (ctx) => {
     return;
   }
 
-  // 查询并校验 token
-  const tokenRecord = getToken(token);
-  const validation = isTokenValid(tokenRecord);
+  // 查询并校验订阅
+  const subscription = getSubscription(token);
+  const validation = isSubscriptionValid(subscription);
   
   if (!validation.valid) {
     ctx.fail(403, validation.reason);
+    return;
+  }
+
+  // 检查 IP 数量限制
+  const clientIp = ctx.ip || ctx.request.ip;
+  const allowed = updateAndCheck(token, clientIp, subscription.max_ips);
+  
+  if (!allowed) {
+    ctx.fail(403, `在线设备数量已达上限（${subscription.max_ips}）`);
     return;
   }
 
@@ -40,3 +50,4 @@ router.get('/sub', async (ctx) => {
 });
 
 export default router;
+

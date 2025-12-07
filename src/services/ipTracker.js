@@ -1,7 +1,7 @@
 // 活跃 IP 统计服务
 // 使用滑动窗口机制统计每个 Token 的活跃公网 IP 数量
 
-import { WINDOW_MS, MAX_IP_PER_TOKEN } from '../config/appConfig.js';
+import { WINDOW_MS } from '../config/appConfig.js';
 
 /**
  * 活跃 IP 统计 Map
@@ -26,9 +26,10 @@ function cleanExpiredIps(ipMap, now) {
  * 更新 IP 记录并检查是否允许访问
  * @param {string} token - Token 字符串
  * @param {string} ip - 客户端 IP
+ * @param {number} maxIps - 该订阅允许的最大 IP 数量
  * @returns {boolean} 是否允许访问（未超限返回 true）
  */
-export function updateAndCheck(token, ip) {
+export function updateAndCheck(token, ip, maxIps) {
   const now = Date.now();
   
   // 获取或创建该 token 的 IP Map
@@ -46,7 +47,7 @@ export function updateAndCheck(token, ip) {
   const activeCount = ipMap.size;
   
   // 3. 如果是新 IP 且已达到上限，拒绝访问
-  if (!alreadyExists && activeCount >= MAX_IP_PER_TOKEN) {
+  if (!alreadyExists && activeCount >= maxIps) {
     return false;
   }
   
