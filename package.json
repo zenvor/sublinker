@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Clash 订阅分发服务，支持 Token 验证和滑动窗口 IP 并发控制",
   "type": "module",
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "main": "src/app.js",
   "scripts": {
     "start": "node src/app.js",
