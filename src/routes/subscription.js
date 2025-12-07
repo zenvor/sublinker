@@ -10,8 +10,12 @@ import {
   deleteSubscription
 } from '../services/subscriptionService.js';
 import { getActiveIps, clearTokenIps } from '../services/ipTracker.js';
+import { authMiddleware } from '../middlewares/authMiddleware.js';
 
 const router = new Router({ prefix: '/admin' });
+
+// 应用认证中间件：该路由下的所有请求都需要经过认证
+router.use(authMiddleware());
 
 /**
  * POST /admin/subscription

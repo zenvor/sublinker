@@ -13,7 +13,6 @@ import errorHandler from './middlewares/errorHandler.js';
 import logger from './middlewares/logger.js';
 import realIp from './middlewares/realIp.js';
 import response from './middlewares/response.js';
-import { authMiddleware } from './middlewares/authMiddleware.js';
 import authRouter from './routes/auth.js';
 import subRouter from './routes/sub.js';
 import providerRouter from './routes/provider.js';
@@ -56,8 +55,7 @@ app.use(providerRouter.allowedMethods());
 app.use(authRouter.routes());
 app.use(authRouter.allowedMethods());
 
-// 订阅管理路由（需要认证）
-app.use(authMiddleware());
+// 订阅管理路由（需要认证） - 中间件已在路由内部注册
 app.use(subscriptionRouter.routes());
 app.use(subscriptionRouter.allowedMethods());
 
