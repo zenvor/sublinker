@@ -41,6 +41,7 @@ router.get('/sub', async (ctx) => {
 
   try {
     const yaml = renderSubYaml(token);
+    ctx.set('Content-Disposition', 'attachment; filename="DMIT.yaml"');
     ctx.type = 'application/x-yaml; charset=utf-8';
     ctx.body = yaml;
   } catch (err) {
