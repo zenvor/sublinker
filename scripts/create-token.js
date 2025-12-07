@@ -17,5 +17,5 @@ console.log('节点配置:', token.nodeProfile);
 console.log('='.repeat(50));
 console.log('');
 console.log('测试订阅链接:');
-console.log(`http://localhost:9007/sub?token=${token.token}`);
+console.log(`http://localhost:3000/sub?token=${token.token}`);
 console.log('');

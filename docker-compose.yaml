@@ -4,17 +4,17 @@ services:
     container_name: cloakgate
     restart: unless-stopped
     ports:
-      - "9007:9007"
+      - "3000:3000"
     volumes:
       # 持久化数据库
       - ./data:/app/data
     environment:
       - NODE_ENV=production
-      - PORT=9007
+      - PORT=3000
       # 可选：自定义 API 域名
       # - API_DOMAIN=https://api.starying.top
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9007/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
       interval: 30s
       timeout: 3s
       retries: 3
