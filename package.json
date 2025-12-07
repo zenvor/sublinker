@@ -8,16 +8,20 @@
     "start": "node src/app.js",
     "dev": "nodemon src/app.js"
   },
-  "keywords": ["clash", "subscription", "proxy"],
+  "keywords": [
+    "clash",
+    "subscription",
+    "proxy"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@koa/router": "^13.1.0",
-    "better-sqlite3": "^11.6.0",
-    "js-yaml": "^4.1.0",
-    "koa": "^2.15.3"
+    "@koa/router": "^15.0.0",
+    "better-sqlite3": "^12.5.0",
+    "js-yaml": "^4.1.1",
+    "koa": "^3.1.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.11"
   }
 }
