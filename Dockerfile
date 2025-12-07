@@ -3,14 +3,20 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
+# 安装构建依赖 (better-sqlite3 需要 python3, make, g++)
+RUN apk add --no-cache python3 make g++
+
 # 复制 package 文件
 COPY package*.json ./
 
-# 安装依赖（包括 devDependencies 以便编译）
+# 安装依赖
 RUN npm ci
 
 # 复制源码
 COPY . .
+
+# 清理开发依赖，只保留生产依赖 (因为后面是直接复制 node_modules)
+RUN npm prune --production
 
 # 运行阶段
 FROM node:18-alpine
@@ -20,11 +26,12 @@ WORKDIR /app
 # 复制 package 文件
 COPY package*.json ./
 
-# 只安装生产依赖
-RUN npm ci --omit=dev
+# 从构建阶段复制 node_modules
+COPY --from=builder /app/node_modules ./node_modules
 
 # 从构建阶段复制源码
 COPY --from=builder /app/src ./src
+COPY --from=builder /app/public ./public
 
 # 创建数据目录
 RUN mkdir -p /app/data
