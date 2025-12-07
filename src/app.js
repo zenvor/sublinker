@@ -8,6 +8,7 @@ import cors from '@koa/cors';
 import bodyParser from 'koa-bodyparser';
 import { PORT, ipBlockerConfig } from './config/appConfig.js';
 import { start as startIpBlocker } from './services/ipBlocker.js';
+import { initAdmin } from './services/adminService.js';
 import errorHandler from './middlewares/errorHandler.js';
 import logger from './middlewares/logger.js';
 import realIp from './middlewares/realIp.js';
@@ -82,17 +83,19 @@ app.use(async (ctx, next) => {
 });
 
 // 启动服务
-app.listen(PORT, () => {
-  console.log(`CloakGate 服务已启动: http://localhost:${PORT}`);
-  console.log(`健康检查: http://localhost:${PORT}/health`);
-  console.log(`订阅接口: http://localhost:${PORT}/sub?token=YOUR_TOKEN`);
-  console.log(`节点接口: http://localhost:${PORT}/provider?token=YOUR_TOKEN`);
-  console.log(`管理接口: http://localhost:${PORT}/admin/subscription`);
-  
-  // 启动 IP 阻断服务（如果启用）
-  if (ipBlockerConfig.enabled) {
-    startIpBlocker();
-  }
+initAdmin().then(() => {
+  app.listen(PORT, () => {
+    console.log(`CloakGate 服务已启动: http://localhost:${PORT}`);
+    console.log(`健康检查: http://localhost:${PORT}/health`);
+    console.log(`订阅接口: http://localhost:${PORT}/sub?token=YOUR_TOKEN`);
+    console.log(`节点接口: http://localhost:${PORT}/provider?token=YOUR_TOKEN`);
+    console.log(`管理接口: http://localhost:${PORT}/admin/subscription`);
+    
+    // 启动 IP 阻断服务（如果启用）
+    if (ipBlockerConfig.enabled) {
+      startIpBlocker();
+    }
+  });
 });
 
 export default app;
