@@ -12,6 +12,8 @@ import errorHandler from './middlewares/errorHandler.js';
 import logger from './middlewares/logger.js';
 import realIp from './middlewares/realIp.js';
 import response from './middlewares/response.js';
+import { authMiddleware } from './middlewares/authMiddleware.js';
+import authRouter from './routes/auth.js';
 import subRouter from './routes/sub.js';
 import providerRouter from './routes/provider.js';
 import subscriptionRouter from './routes/subscription.js';
@@ -48,8 +50,16 @@ app.use(subRouter.routes());
 app.use(subRouter.allowedMethods());
 app.use(providerRouter.routes());
 app.use(providerRouter.allowedMethods());
+
+// 认证路由（无需认证）
+app.use(authRouter.routes());
+app.use(authRouter.allowedMethods());
+
+// 订阅管理路由（需要认证）
+app.use(authMiddleware());
 app.use(subscriptionRouter.routes());
 app.use(subscriptionRouter.allowedMethods());
+
 app.use(router.routes());
 app.use(router.allowedMethods());
 
