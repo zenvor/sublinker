@@ -5,6 +5,7 @@ import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import yaml from 'js-yaml'
+import { API_DOMAIN } from '../config/appConfig.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -34,7 +35,9 @@ export function loadSubTemplate() {
  */
 export function renderSubYaml(token) {
   const template = loadSubTemplate()
-  return template.replace(/__TOKEN__/g, token)
+  return template
+    .replace(/__TOKEN__/g, token)
+    .replace(/__API_DOMAIN__/g, API_DOMAIN)
 }
 
 /**
