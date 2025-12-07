@@ -14,5 +14,8 @@ data/
 .idea/
 .vscode/
 
+# 静态文件
+public/
+
 # 开发文档（可选）
 # DevelopDoc.md

@@ -13,6 +13,13 @@ import response from './middlewares/response.js';
 import subRouter from './routes/sub.js';
 import providerRouter from './routes/provider.js';
 import subscriptionRouter from './routes/subscription.js';
+import serve from 'koa-static';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 
 const app = new Koa();
 const router = new Router();
@@ -24,6 +31,9 @@ app.use(bodyParser());     // JSON 请求体解析
 app.use(response);         // 统一响应格式
 app.use(realIp);
 app.use(logger);
+
+// 静态文件服务
+app.use(serve(path.join(__dirname, '../public')));
 
 // 健康检查端点
 router.get('/health', (ctx) => {
