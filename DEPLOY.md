@@ -87,6 +87,12 @@ docker compose logs -f
   1. 重新上传代码
   2. 运行 `docker compose up -d --build`
 
+> **Tip**: 如果在 VPS 上拉取代码 (git pull) 每次都要输入密码，可以配置凭证存储：
+> ```bash
+> git config --global credential.helper store
+> ```
+> 第一次输入后就会保存下来。或者推荐配置 SSH Key 访问。
+
 ## 高级配置 (Nginx 反向代理)
 
 建议在 Docker 前面加一层 Nginx 做反向代理和 HTTPS，配置示例：
