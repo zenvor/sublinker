@@ -1,7 +1,7 @@
 // 全局配置
 
 // 服务端口
-export const PORT = process.env.PORT || 9007;
+export const PORT = process.env.PORT || 3000;
 
 // 滑动窗口配置
 export const WINDOW_MS = 30 * 60 * 1000; // 30 分钟

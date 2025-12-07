@@ -407,11 +407,11 @@ npm install --save-dev typescript ts-node nodemon @types/node @types/koa @types/
 1. 写 `Dockerfile`，把 Node 服务打进镜像
 2. 使用 1Panel 创建 Node 服务容器：
 
-   - 暴露一个内网端口：如 9007
+   - 暴露一个内网端口：如 3000
 
 3. 在 Caddy/Nginx 中加反向代理：
 
-   - `https://api.starying.top` → `http://127.0.0.1:9007`
+   - `https://api.starying.top` → `http://127.0.0.1:3000`
 
 4. 确认：
 
