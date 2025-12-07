@@ -11,7 +11,7 @@ external-controller: 127.0.0.1:9090
 proxy-providers:
   main:
     type: http
-    url: 'http://localhost:3000/provider?token=__TOKEN__'
+    url: '__API_DOMAIN__/provider?token=__TOKEN__'
     path: ./providers/main.yaml
     interval: 5
     health-check:
