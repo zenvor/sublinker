@@ -30,8 +30,8 @@ router.get('/sub', async (ctx) => {
     return;
   }
 
-  // 检查 IP 数量限制
-  const clientIp = ctx.ip || ctx.request.ip;
+  // 检查 IP 数量限制（使用 realIp 中间件解析的真实 IP）
+  const clientIp = ctx.realIp;
   const allowed = updateAndCheck(token, clientIp, subscription.max_ips);
   
   if (!allowed) {
