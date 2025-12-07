@@ -98,8 +98,13 @@ server {
 
     location / {
         proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
 }
 ```
+
+> **重要**: 必须配置 `X-Forwarded-For` 或 `X-Real-IP` 头，否则后端只能获取到 Docker 内网 IP。
