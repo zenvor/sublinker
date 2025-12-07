@@ -43,9 +43,10 @@ router.get('/provider', async (ctx) => {
   const allowed = updateAndCheck(token, clientIp, subscription.max_ips);
   
   if (!allowed) {
-    // 超限：返回空节点列表
+    // 超限：返回 403 禁止访问
     const activeIps = getActiveIps(token);
     console.log(`[Provider] IP 超限: token=${token.slice(0, 8)}... ip=${clientIp} active=${activeIps.length}/${subscription.max_ips}`);
+    ctx.status = 403;
     ctx.type = 'application/x-yaml; charset=utf-8';
     ctx.body = generateEmptyProxiesYaml();
     return;
