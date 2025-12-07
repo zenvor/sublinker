@@ -15,6 +15,7 @@ import providerRouter from './routes/provider.js';
 import subscriptionRouter from './routes/subscription.js';
 import serve from 'koa-static';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -49,6 +50,24 @@ app.use(subscriptionRouter.routes());
 app.use(subscriptionRouter.allowedMethods());
 app.use(router.routes());
 app.use(router.allowedMethods());
+
+// History Mode Fallback
+app.use(async (ctx, next) => {
+  await next();
+  
+  if (ctx.status === 404 && ctx.method === 'GET' && ctx.accepts('html')) {
+    // 排除 API 路径 (假设所有 API 都以 /api, /sub, /provider, /admin 开头，或者是特定的功能路径)
+    // 但更简单的是：如果到了这里还是 404，且是 HTML 请求，就返回 index.html
+    try {
+      ctx.type = 'html';
+      ctx.body = fs.createReadStream(path.join(__dirname, '../public/index.html'));
+    } catch (e) {
+      if (e.code !== 'ENOENT') {
+        throw e;
+      }
+    }
+  }
+});
 
 // 启动服务
 app.listen(PORT, () => {
