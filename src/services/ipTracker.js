@@ -102,3 +102,21 @@ export function getActiveIpCount(token) {
 export function clearTokenIps(token) {
   activeMap.delete(token);
 }
+
+/**
+ * 获取所有订阅的全部活跃 IP（用于比对非法访问）
+ * @returns {Set<string>} 所有活跃 IP 的 Set
+ */
+export function getAllActiveIps() {
+  const now = Date.now();
+  const allIps = new Set();
+  
+  for (const [, ipMap] of activeMap.entries()) {
+    cleanExpiredIps(ipMap, now);
+    for (const ip of ipMap.keys()) {
+      allIps.add(ip);
+    }
+  }
+  
+  return allIps;
+}
