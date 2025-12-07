@@ -27,12 +27,12 @@ export function getSubscription(tokenStr) {
  * 创建新订阅
  * @param {object} options - 创建选项
  * @param {string} options.remark - 备注（必填）
- * @param {number} options.maxIps - 最大在线 IP 数量（默认 2）
+ * @param {number} options.maxIps - 最大 IP 绑定数量（默认 1）
  * @param {string|null} options.expiredAt - 过期时间
  * @returns {object} 创建的订阅记录
  */
 export function createSubscription(options = {}) {
-  const { remark, maxIps = 2, expiredAt = null } = options;
+  const { remark, maxIps = 1, expiredAt = null } = options;
   const token = generateToken();
   
   const stmt = db.prepare(`
@@ -57,7 +57,7 @@ export function createSubscription(options = {}) {
  * @param {string} tokenStr - Token 字符串
  * @param {object} updates - 更新内容
  * @param {string} [updates.remark] - 备注
- * @param {number} [updates.maxIps] - 最大在线 IP 数量
+ * @param {number} [updates.maxIps] - 最大 IP 绑定数量
  * @param {string} [updates.status] - 状态
  * @param {string|null} [updates.expiredAt] - 过期时间
  * @returns {boolean} 是否更新成功
