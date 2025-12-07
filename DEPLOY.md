@@ -61,6 +61,28 @@ mkdir -p data
 docker compose up -d --build
 ```
 
+### 3.1 IP 阻断功能配置（可选）
+
+如需启用 IP 阻断功能，需要在 `docker-compose.yaml` 中添加以下环境变量：
+
+```yaml
+environment:
+  # X-UI 面板配置（使用内网 IP）
+  - XUI_HOST=127.0.0.1
+  - XUI_PORT=54321
+  - XUI_WEB_BASE_PATH=/your-web-base-path
+  - XUI_USERNAME=your-username
+  - XUI_PASSWORD=your-password
+  # IP 阻断配置
+  - IP_BLOCKER_ENABLED=true
+  - IP_BLOCKER_POLL_INTERVAL=30000
+  - IP_BLOCKER_LOG_COUNT=50
+  - IP_BLOCKER_JAIL_NAME=3x-ipl
+  - IP_BLOCKER_DRY_RUN=false
+```
+
+> **注意**: 由于需要调用 Fail2Ban，容器必须以特权模式运行或挂载宿主机的 Fail2Ban socket。推荐直接在宿主机上运行服务而非 Docker 容器。
+
 ### 4. 验证部署
 
 查看容器状态：
