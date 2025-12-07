@@ -12,23 +12,11 @@ const router = new Router({ prefix: '/admin' });
  * 创建新 Token
  */
 router.post('/token', async (ctx) => {
-  // 简单的 JSON 解析（Koa 需要 body parser，这里手动处理）
-  let body = {};
-  try {
-    const rawBody = await getRawBody(ctx);
-    body = rawBody ? JSON.parse(rawBody) : {};
-  } catch {
-    body = {};
-  }
-  
-  const { remark = '', nodeProfile = 'default', expiredAt = null } = body;
+  const { remark = '', nodeProfile = 'default', expiredAt = null } = ctx.request.body || {};
   
   const token = createToken({ remark, nodeProfile, expiredAt });
   
-  ctx.body = {
-    success: true,
-    data: token
-  };
+  ctx.success(token, 'Token 创建成功', 201);
 });
 
 /**
@@ -39,10 +27,7 @@ router.get('/token', async (ctx) => {
   const { limit = 50, offset = 0 } = ctx.query;
   const tokens = listTokens(parseInt(limit), parseInt(offset));
   
-  ctx.body = {
-    success: true,
-    data: tokens
-  };
+  ctx.success(tokens);
 });
 
 /**
@@ -54,15 +39,11 @@ router.get('/token/:token', async (ctx) => {
   const tokenRecord = getToken(token);
   
   if (!tokenRecord) {
-    ctx.status = 404;
-    ctx.body = { success: false, message: 'Token 不存在' };
+    ctx.fail(404, 'Token 不存在');
     return;
   }
   
-  ctx.body = {
-    success: true,
-    data: tokenRecord
-  };
+  ctx.success(tokenRecord);
 });
 
 /**
@@ -71,31 +52,21 @@ router.get('/token/:token', async (ctx) => {
  */
 router.patch('/token/:token', async (ctx) => {
   const { token } = ctx.params;
-  let body = {};
-  try {
-    const rawBody = await getRawBody(ctx);
-    body = rawBody ? JSON.parse(rawBody) : {};
-  } catch {
-    body = {};
-  }
-  
-  const { status } = body;
+  const { status } = ctx.request.body || {};
   
   if (!['active', 'banned'].includes(status)) {
-    ctx.status = 400;
-    ctx.body = { success: false, message: '状态只能是 active 或 banned' };
+    ctx.fail(400, '状态只能是 active 或 banned');
     return;
   }
   
   const updated = updateTokenStatus(token, status);
   
   if (!updated) {
-    ctx.status = 404;
-    ctx.body = { success: false, message: 'Token 不存在' };
+    ctx.fail(404, 'Token 不存在');
     return;
   }
   
-  ctx.body = { success: true, message: `Token 状态已更新为 ${status}` };
+  ctx.success(null, `Token 状态已更新为 ${status}`);
 });
 
 /**
@@ -107,15 +78,15 @@ router.delete('/token/:token', async (ctx) => {
   const deleted = deleteToken(token);
   
   if (!deleted) {
-    ctx.status = 404;
-    ctx.body = { success: false, message: 'Token 不存在' };
+    ctx.fail(404, 'Token 不存在');
     return;
   }
   
   // 同时清除该 Token 的活跃 IP 记录
   clearTokenIps(token);
   
-  ctx.body = { success: true, message: 'Token 已删除' };
+  ctx.status = 204;
+  ctx.body = null;
 });
 
 /**
@@ -128,39 +99,22 @@ router.get('/token/:token/active-ips', async (ctx) => {
   // 检查 token 是否存在
   const tokenRecord = getToken(token);
   if (!tokenRecord) {
-    ctx.status = 404;
-    ctx.body = { success: false, message: 'Token 不存在' };
+    ctx.fail(404, 'Token 不存在');
     return;
   }
   
   const activeIps = getActiveIps(token);
   
-  ctx.body = {
-    success: true,
-    data: {
-      token: token.slice(0, 8) + '...',
-      count: activeIps.length,
-      ips: activeIps.map(item => ({
-        ip: item.ip,
-        lastSeen: new Date(item.lastSeen).toLocaleString('zh-CN'),
-        expiresInMinutes: Math.round(item.expiresIn / 60000)
-      }))
-    }
-  };
+  ctx.success({
+    token: token.slice(0, 8) + '...',
+    count: activeIps.length,
+    ips: activeIps.map(item => ({
+      ip: item.ip,
+      lastSeen: new Date(item.lastSeen).toLocaleString('zh-CN'),
+      expiresInMinutes: Math.round(item.expiresIn / 60000)
+    }))
+  });
 });
 
-/**
- * 读取原始请求体
- * @param {object} ctx 
- * @returns {Promise<string>}
- */
-function getRawBody(ctx) {
-  return new Promise((resolve, reject) => {
-    let data = '';
-    ctx.req.on('data', chunk => data += chunk);
-    ctx.req.on('end', () => resolve(data));
-    ctx.req.on('error', reject);
-  });
-}
-
 export default router;
+

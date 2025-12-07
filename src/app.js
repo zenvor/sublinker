@@ -3,10 +3,13 @@
 
 import Koa from 'koa';
 import Router from '@koa/router';
+import cors from '@koa/cors';
+import bodyParser from 'koa-bodyparser';
 import { PORT } from './config/appConfig.js';
 import errorHandler from './middlewares/errorHandler.js';
 import logger from './middlewares/logger.js';
 import realIp from './middlewares/realIp.js';
+import response from './middlewares/response.js';
 import subRouter from './routes/sub.js';
 import providerRouter from './routes/provider.js';
 import adminRouter from './routes/admin.js';
@@ -16,6 +19,9 @@ const router = new Router();
 
 // 注册中间件（顺序重要）
 app.use(errorHandler);
+app.use(cors());           // CORS 跨域支持
+app.use(bodyParser());     // JSON 请求体解析
+app.use(response);         // 统一响应格式
 app.use(realIp);
 app.use(logger);
 
@@ -44,6 +50,3 @@ app.listen(PORT, () => {
 });
 
 export default app;
-
-
-

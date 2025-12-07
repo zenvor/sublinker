@@ -16,8 +16,7 @@ router.get('/sub', async (ctx) => {
 
   // 检查 token 参数
   if (!token) {
-    ctx.status = 400;
-    ctx.body = '缺少 token 参数';
+    ctx.fail(400, '缺少 token 参数');
     return;
   }
 
@@ -26,8 +25,7 @@ router.get('/sub', async (ctx) => {
   const validation = isTokenValid(tokenRecord);
   
   if (!validation.valid) {
-    ctx.status = 403;
-    ctx.body = validation.reason;
+    ctx.fail(403, validation.reason);
     return;
   }
 
@@ -37,10 +35,8 @@ router.get('/sub', async (ctx) => {
     ctx.body = yaml;
   } catch (err) {
     console.error('渲染订阅失败:', err);
-    ctx.status = 500;
-    ctx.body = '服务内部错误';
+    ctx.fail(500, '服务内部错误');
   }
 });
 
 export default router;
-
