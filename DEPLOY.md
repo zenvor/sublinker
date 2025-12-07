@@ -108,3 +108,15 @@ server {
 ```
 
 > **重要**: 必须配置 `X-Forwarded-For` 或 `X-Real-IP` 头，否则后端只能获取到 Docker 内网 IP。
+
+## 高级配置 (Caddy 反向代理)
+
+Caddy 会自动处理 HTTPS 证书和代理头，配置更简洁：
+
+```caddyfile
+your-domain.com {
+    reverse_proxy 127.0.0.1:3000
+}
+```
+
+Caddy 默认会自动设置 `X-Forwarded-For`、`X-Real-IP` 等头，无需额外配置。
