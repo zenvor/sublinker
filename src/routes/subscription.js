@@ -29,8 +29,8 @@ router.post('/subscription', async (ctx) => {
     return;
   }
   
-  if (maxIps < 1 || maxIps > 100) {
-    ctx.fail(400, 'IP 绑定数量必须在 1-100 之间');
+  if (maxIps < 0 || maxIps > 100) {
+    ctx.fail(400, 'IP 绑定数量必须在 0-100 之间 (0表示无限制)');
     return;
   }
   
@@ -90,8 +90,8 @@ router.put('/subscription/:token', async (ctx) => {
   }
   
   // 验证 maxIps
-  if (maxIps !== undefined && (maxIps < 1 || maxIps > 100)) {
-    ctx.fail(400, 'IP 绑定数量必须在 1-100 之间');
+  if (maxIps !== undefined && (maxIps < 0 || maxIps > 100)) {
+    ctx.fail(400, 'IP 绑定数量必须在 0-100 之间 (0表示无限制)');
     return;
   }
   
@@ -150,6 +150,25 @@ router.get('/subscription/:token/active-ips', async (ctx) => {
       boundAt: new Date(item.boundAt).toLocaleString('zh-CN')
     }))
   });
+});
+
+/**
+ * DELETE /admin/subscription/:token/active-ips
+ * 解绑订阅的所有 IP
+ */
+router.delete('/subscription/:token/active-ips', async (ctx) => {
+  const { token } = ctx.params;
+  
+  // 检查订阅是否存在
+  const subscription = getSubscription(token);
+  if (!subscription) {
+    ctx.fail(404, '订阅不存在');
+    return;
+  }
+  
+  clearTokenIps(token);
+  
+  ctx.success(null, 'IP 解绑成功');
 });
 
 export default router;

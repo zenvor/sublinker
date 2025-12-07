@@ -27,7 +27,8 @@ export function updateAndCheck(token, ip, maxIps) {
   const boundCount = ipMap.size;
   
   // 如果是新 IP 且已达到绑定上限，拒绝访问
-  if (!alreadyBound && boundCount >= maxIps) {
+  // maxIps 为 0 时表示无限制
+  if (!alreadyBound && maxIps > 0 && boundCount >= maxIps) {
     return false;
   }
   
