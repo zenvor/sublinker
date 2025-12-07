@@ -61,7 +61,19 @@ mkdir -p data
 docker compose up -d --build
 ```
 
-### 3.1 IP 阻断功能配置（可选）
+### 3.1 环境变量配置
+
+推荐复制 `.env.example` 为 `.env` 并修改配置，服务启动时会自动加载：
+
+```bash
+cp .env.example .env
+nano .env
+# 编辑配置...
+```
+
+或者继续使用 Docker 环境变量的方式。
+
+### 3.2 IP 阻断功能配置（可选）
 
 如需启用 IP 阻断功能，需要在 `docker-compose.yaml` 中添加以下环境变量：
 

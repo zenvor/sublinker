@@ -2,6 +2,7 @@
 // 应用入口
 
 import Koa from 'koa';
+import 'dotenv/config'; // 加载 .env 文件
 import Router from '@koa/router';
 import cors from '@koa/cors';
 import bodyParser from 'koa-bodyparser';
