@@ -18,7 +18,7 @@ const router = new Router({ prefix: '/admin' });
  * 创建新订阅
  */
 router.post('/subscription', async (ctx) => {
-  const { remark, maxIps = 2, expiredAt = null } = ctx.request.body || {};
+  const { remark, maxIps = 1, expiredAt = null } = ctx.request.body || {};
   
   if (!remark) {
     ctx.fail(400, '备注不能为空');
@@ -26,7 +26,7 @@ router.post('/subscription', async (ctx) => {
   }
   
   if (maxIps < 1 || maxIps > 100) {
-    ctx.fail(400, '在线 IP 限制必须在 1-100 之间');
+    ctx.fail(400, 'IP 绑定数量必须在 1-100 之间');
     return;
   }
   
@@ -87,7 +87,7 @@ router.put('/subscription/:token', async (ctx) => {
   
   // 验证 maxIps
   if (maxIps !== undefined && (maxIps < 1 || maxIps > 100)) {
-    ctx.fail(400, '在线 IP 限制必须在 1-100 之间');
+    ctx.fail(400, 'IP 绑定数量必须在 1-100 之间');
     return;
   }
   
@@ -123,7 +123,7 @@ router.delete('/subscription/:token', async (ctx) => {
 
 /**
  * GET /admin/subscription/:token/active-ips
- * 查看订阅的活跃 IP 列表
+ * 查看订阅的已绑定 IP 列表
  */
 router.get('/subscription/:token/active-ips', async (ctx) => {
   const { token } = ctx.params;
@@ -143,8 +143,7 @@ router.get('/subscription/:token/active-ips', async (ctx) => {
     count: activeIps.length,
     ips: activeIps.map(item => ({
       ip: item.ip,
-      lastSeen: new Date(item.lastSeen).toLocaleString('zh-CN'),
-      expiresInMinutes: Math.round(item.expiresIn / 60000)
+      boundAt: new Date(item.boundAt).toLocaleString('zh-CN')
     }))
   });
 });

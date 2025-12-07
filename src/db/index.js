@@ -20,7 +20,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     token TEXT UNIQUE NOT NULL,
     remark TEXT NOT NULL,
-    max_ips INTEGER DEFAULT 2,
+    max_ips INTEGER DEFAULT 1,
     status TEXT NOT NULL DEFAULT 'active',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     expired_at DATETIME

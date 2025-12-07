@@ -39,13 +39,13 @@ router.get('/provider', async (ctx) => {
   const clientIp = ctx.realIp || ctx.ip;
   const userAgent = ctx.headers['user-agent'] || 'unknown';
 
-  // IP 并发控制检查（使用订阅的 max_ips 配置）
+  // IP 绑定检查（使用订阅的 max_ips 配置）
   const allowed = updateAndCheck(token, clientIp, subscription.max_ips);
   
   if (!allowed) {
-    // 超限：返回 403 禁止访问
+    // 超限：返回 403 IP 绑定数量超限
     const activeIps = getActiveIps(token);
-    console.log(`[Provider] IP 超限: token=${token.slice(0, 8)}... ip=${clientIp} active=${activeIps.length}/${subscription.max_ips}`);
+    console.log(`[Provider] IP 超限: token=${token.slice(0, 8)}... ip=${clientIp} bound=${activeIps.length}/${subscription.max_ips}`);
     ctx.status = 403;
     ctx.type = 'application/x-yaml; charset=utf-8';
     ctx.body = generateEmptyProxiesYaml();

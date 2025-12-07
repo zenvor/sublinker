@@ -35,7 +35,7 @@ router.get('/sub', async (ctx) => {
   const allowed = updateAndCheck(token, clientIp, subscription.max_ips);
   
   if (!allowed) {
-    ctx.fail(403, `在线设备数量已达上限（${subscription.max_ips}）`);
+    ctx.fail(403, `IP 绑定数量已达上限（${subscription.max_ips}）`);
     return;
   }
 
