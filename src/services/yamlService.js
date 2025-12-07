@@ -51,7 +51,7 @@ export function generateProxiesYaml(nodeProfile = 'default') {
   // 后续可以根据 nodeProfile 从数据库或配置文件加载不同节点集
   const rawProxies = [
     {
-      name: 'United States | 01-miiokapvuser',
+      name: '🇺🇸 United States | 01',
       server: 'lucky.starying.top',
       port: 36609,
       type: 'vless',
@@ -68,7 +68,7 @@ export function generateProxiesYaml(nodeProfile = 'default') {
       clientFingerprint: 'random',
     },
     {
-      name: 'United States | 02-nx17aell',
+      name: '🇺🇸 United States | 02',
       server: 'lucky.starying.top',
       port: 57340,
       type: 'vless',
@@ -84,7 +84,7 @@ export function generateProxiesYaml(nodeProfile = 'default') {
       clientFingerprint: 'random',
     },
     {
-      name: 'United States | 03-db5nnigc',
+      name: '🇺🇸 United States | 03',
       server: 'lucky.starying.top',
       port: 39075,
       type: 'vless',
@@ -100,7 +100,7 @@ export function generateProxiesYaml(nodeProfile = 'default') {
       clientFingerprint: 'random',
     },
     {
-      name: 'United States | 04-a96iczrj',
+      name: '🇺🇸 United States | 04',
       server: 'lucky.starying.top',
       port: 26284,
       type: 'vless',
@@ -116,7 +116,7 @@ export function generateProxiesYaml(nodeProfile = 'default') {
       clientFingerprint: 'random',
     },
     {
-      name: 'United States | 05-mnbv5sej',
+      name: '🇺🇸 United States | 05',
       server: 'lucky.starying.top',
       port: 57020,
       type: 'vless',
