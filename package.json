@@ -16,10 +16,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@koa/cors": "^5.0.0",
     "@koa/router": "^15.0.0",
     "better-sqlite3": "^12.5.0",
     "js-yaml": "^4.1.1",
-    "koa": "^3.1.1"
+    "koa": "^3.1.1",
+    "koa-bodyparser": "^4.4.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.11"
