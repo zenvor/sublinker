@@ -126,6 +126,11 @@ docker compose logs -f
 > git config --global credential.helper store
 > ```
 > 第一次输入后就会保存下来。或者推荐配置 SSH Key 访问。
+>
+> **Git 警告解决**: 如果 `git pull` 出现 "Need to specify how to reconcile divergent branches" 警告，请运行以下命令配置默认行为：
+> ```bash
+> git config pull.rebase false
+> ```
 
 ## 高级配置 (Nginx 反向代理)
 
