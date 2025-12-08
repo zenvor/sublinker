@@ -53,7 +53,7 @@ export function generateProxiesYaml(nodeProfile = 'default') {
     {
       name: '🇺🇸 United States | 01',
       server: 'lucky.starying.top',
-      port: 36609,
+      port: 55567,
       type: 'vless',
       tls: true,
       uuid: '5e4ed592-9a3f-41c9-9dde-b756f3e97d37',
@@ -70,7 +70,7 @@ export function generateProxiesYaml(nodeProfile = 'default') {
     {
       name: '🇺🇸 United States | 02',
       server: 'lucky.starying.top',
-      port: 57340,
+      port: 32841,
       type: 'vless',
       tls: true,
       uuid: '886060aa-ff99-4ff9-907f-22bbf8c16779',
@@ -86,7 +86,7 @@ export function generateProxiesYaml(nodeProfile = 'default') {
     {
       name: '🇺🇸 United States | 03',
       server: 'lucky.starying.top',
-      port: 39075,
+      port: 50213,
       type: 'vless',
       tls: true,
       uuid: 'a39c48cd-04a3-4c3a-a8f8-ac46aadafad2',
@@ -102,7 +102,7 @@ export function generateProxiesYaml(nodeProfile = 'default') {
     {
       name: '🇺🇸 United States | 04',
       server: 'lucky.starying.top',
-      port: 26284,
+      port: 39922,
       type: 'vless',
       tls: true,
       uuid: '4b360382-98af-4b41-8b88-e35d4e98830d',
@@ -118,7 +118,7 @@ export function generateProxiesYaml(nodeProfile = 'default') {
     {
       name: '🇺🇸 United States | 05',
       server: 'lucky.starying.top',
-      port: 57020,
+      port: 53164,
       type: 'vless',
       tls: true,
       uuid: '49600216-6a16-4685-bdc3-a1f3b3050b25',
