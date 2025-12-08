@@ -1,11 +1,7 @@
 // IP 绑定服务
-// 简单的 token-IP 绑定逻辑，绑定后不会自动过期
+// 使用数据库持久化 token-IP 绑定，绑定后不会自动过期
 
-/**
- * IP 绑定 Map
- * 结构: Map<tokenStr, Map<ip, bindTimestamp>>
- */
-const bindingMap = new Map();
+import db from '../db/index.js';
 
 /**
  * 检查 IP 绑定并更新记录
@@ -15,16 +11,13 @@ const bindingMap = new Map();
  * @returns {boolean} 是否允许访问（未超限返回 true）
  */
 export function updateAndCheck(token, ip, maxIps) {
-  // 获取或创建该 token 的 IP Map
-  let ipMap = bindingMap.get(token);
-  if (!ipMap) {
-    ipMap = new Map();
-    bindingMap.set(token, ipMap);
-  }
-  
   // 检查当前 IP 是否已绑定
-  const alreadyBound = ipMap.has(ip);
-  const boundCount = ipMap.size;
+  const existing = db.prepare('SELECT id FROM ip_bindings WHERE token = ? AND ip = ?').get(token, ip);
+  const alreadyBound = !!existing;
+  
+  // 获取当前已绑定 IP 数量
+  const countResult = db.prepare('SELECT COUNT(*) as count FROM ip_bindings WHERE token = ?').get(token);
+  const boundCount = countResult?.count || 0;
   
   // 如果是新 IP 且已达到绑定上限，拒绝访问
   // maxIps 为 0 时表示无限制
@@ -32,9 +25,9 @@ export function updateAndCheck(token, ip, maxIps) {
     return false;
   }
   
-  // 记录/更新当前 IP 的绑定时间
+  // 记录新 IP 的绑定（使用 INSERT OR IGNORE 避免重复）
   if (!alreadyBound) {
-    ipMap.set(ip, Date.now());
+    db.prepare('INSERT OR IGNORE INTO ip_bindings (token, ip) VALUES (?, ?)').run(token, ip);
   }
   
   return true;
@@ -46,21 +39,12 @@ export function updateAndCheck(token, ip, maxIps) {
  * @returns {Array<{ip: string, boundAt: number}>} 已绑定 IP 列表
  */
 export function getActiveIps(token) {
-  const ipMap = bindingMap.get(token);
+  const rows = db.prepare('SELECT ip, bound_at FROM ip_bindings WHERE token = ?').all(token);
   
-  if (!ipMap) {
-    return [];
-  }
-  
-  const result = [];
-  for (const [ip, timestamp] of ipMap.entries()) {
-    result.push({
-      ip,
-      boundAt: timestamp
-    });
-  }
-  
-  return result;
+  return rows.map(row => ({
+    ip: row.ip,
+    boundAt: new Date(row.bound_at).getTime()
+  }));
 }
 
 /**
@@ -69,7 +53,8 @@ export function getActiveIps(token) {
  * @returns {number} 已绑定 IP 数量
  */
 export function getActiveIpCount(token) {
-  return getActiveIps(token).length;
+  const result = db.prepare('SELECT COUNT(*) as count FROM ip_bindings WHERE token = ?').get(token);
+  return result?.count || 0;
 }
 
 /**
@@ -77,7 +62,7 @@ export function getActiveIpCount(token) {
  * @param {string} token - Token 字符串
  */
 export function clearTokenIps(token) {
-  bindingMap.delete(token);
+  db.prepare('DELETE FROM ip_bindings WHERE token = ?').run(token);
 }
 
 /**
@@ -85,13 +70,6 @@ export function clearTokenIps(token) {
  * @returns {Set<string>} 所有已绑定 IP 的 Set
  */
 export function getAllActiveIps() {
-  const allIps = new Set();
-  
-  for (const [, ipMap] of bindingMap.entries()) {
-    for (const ip of ipMap.keys()) {
-      allIps.add(ip);
-    }
-  }
-  
-  return allIps;
+  const rows = db.prepare('SELECT DISTINCT ip FROM ip_bindings').all();
+  return new Set(rows.map(row => row.ip));
 }

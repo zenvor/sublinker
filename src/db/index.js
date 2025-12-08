@@ -36,6 +36,16 @@ db.exec(`
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS ip_bindings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    token TEXT NOT NULL,
+    ip TEXT NOT NULL,
+    bound_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(token, ip)
+  );
+  
+  CREATE INDEX IF NOT EXISTS idx_ip_bindings_token ON ip_bindings(token);
 `);
 
 // 数据库迁移：确保 subscriptions 表包含 max_ips 列
