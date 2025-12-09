@@ -1,7 +1,7 @@
 mod config;
-mod routes;
+mod handlers;
 
-use crate::{config::Config, routes::create_routes};
+use crate::{config::Config, handlers::create_routes};
 use tracing::info;
 
 #[tokio::main]
