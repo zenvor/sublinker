@@ -12,7 +12,7 @@
     "dev": "nodemon src/app.js",
     "build": "echo 'JavaScript版本无需构建步骤'",
     "test": "echo '测试暂未实现'",
-    "clean": "rm -rf node_modules coverage"
+    "clean": "rimraf coverage"
   },
   "keywords": [
     "clash",

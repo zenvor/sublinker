@@ -31,10 +31,10 @@ npm run start:js
 ### Rust版本
 ```bash
 # 构建
-cd packages/rust-package && cargo build
+cargo build -p rust-package
 
 # 运行
-cd packages/rust-package && cargo run
+cargo run -p rust-package
 ```
 
 ## 脚本命令
