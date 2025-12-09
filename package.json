@@ -8,15 +8,15 @@
   ],
   "scripts": {
     "dev:js": "npm run dev --workspace=javascript-package",
-    "dev:rust": "cd packages/rust-package && cargo run",
+    "dev:rust": "cargo run -p rust-package",
     "start:js": "npm run start --workspace=javascript-package",
-    "start:rust": "cd packages/rust-package && cargo run --release",
+    "start:rust": "cargo run -p rust-package --release",
     "build": "echo 'JavaScript版本无需构建，Rust版本使用cargo build'",
     "test": "npm run test --workspaces",
-    "clean": "npm run clean --workspaces && cd packages/rust-package && cargo clean",
+    "clean": "npm run clean --workspaces && cargo clean -p rust-package",
     "docker:build:js": "docker build -f packages/javascript-package/Dockerfile -t cloakgate:js .",
     "docker:build:rust": "docker build -f packages/rust-package/Dockerfile -t cloakgate:rust .",
-    "install:all": "npm install && cd packages/rust-package && cargo fetch"
+    "install:all": "npm install && cargo fetch"
   },
   "keywords": [
     "clash",
