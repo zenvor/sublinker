@@ -9,6 +9,7 @@
   "scripts": {
     "dev:js": "npm run dev --workspace=javascript-package",
     "dev:rust": "cargo run -p rust-package",
+    "devs": "concurrently \"npm:dev:*\"",
     "start:js": "npm run start --workspace=javascript-package",
     "start:rust": "cargo run -p rust-package --release",
     "build": "echo 'JavaScript版本无需构建，Rust版本使用cargo build'",
