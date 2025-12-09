@@ -1,37 +1,34 @@
 {
-  "name": "cloakgate",
+  "name": "cloakgate-monorepo",
   "version": "1.0.0",
-  "description": "Clash 订阅分发服务，支持 Token 验证和滑动窗口 IP 并发控制",
-  "type": "module",
-  "engines": {
-    "node": ">=22.0.0"
-  },
-  "main": "src/app.js",
+  "description": "Clash 订阅分发服务 - Monorepo版本，支持JavaScript和Rust实现",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "start": "node src/app.js",
-    "dev": "nodemon src/app.js"
+    "dev:js": "npm run dev --workspace=javascript-package",
+    "dev:rust": "cd packages/rust-package && cargo run",
+    "start:js": "npm run start --workspace=javascript-package",
+    "start:rust": "cd packages/rust-package && cargo run --release",
+    "build": "echo 'JavaScript版本无需构建，Rust版本使用cargo build'",
+    "test": "npm run test --workspaces",
+    "clean": "npm run clean --workspaces && cd packages/rust-package && cargo clean",
+    "docker:build:js": "docker build -f packages/javascript-package/Dockerfile -t cloakgate:js .",
+    "docker:build:rust": "docker build -f packages/rust-package/Dockerfile -t cloakgate:rust .",
+    "install:all": "npm install && cd packages/rust-package && cargo fetch"
   },
   "keywords": [
     "clash",
     "subscription",
-    "proxy"
+    "proxy",
+    "monorepo",
+    "javascript",
+    "rust"
   ],
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "@koa/cors": "^5.0.0",
-    "@koa/router": "^15.0.0",
-    "axios": "^1.13.2",
-    "bcryptjs": "^3.0.3",
-    "better-sqlite3": "^12.5.0",
-    "dotenv": "^17.2.3",
-    "js-yaml": "^4.1.1",
-    "koa": "^3.1.1",
-    "koa-bodyparser": "^4.4.1",
-    "koa-static": "^5.0.0",
-    "qs": "^6.14.0"
-  },
   "devDependencies": {
-    "nodemon": "^3.1.11"
+    "concurrently": "^8.2.2"
   }
 }

@@ -1,0 +1,41 @@
+{
+  "name": "javascript-package",
+  "version": "1.0.0",
+  "description": "Clash 订阅分发服务 - JavaScript版本",
+  "type": "module",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
+    "build": "echo 'JavaScript版本无需构建步骤'",
+    "test": "echo '测试暂未实现'",
+    "clean": "rm -rf node_modules coverage"
+  },
+  "keywords": [
+    "clash",
+    "subscription",
+    "proxy",
+    "javascript"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@koa/cors": "^5.0.0",
+    "@koa/router": "^15.0.0",
+    "axios": "^1.13.2",
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^12.5.0",
+    "dotenv": "^17.2.3",
+    "js-yaml": "^4.1.1",
+    "koa": "^3.1.1",
+    "koa-bodyparser": "^4.4.1",
+    "koa-static": "^5.0.0",
+    "qs": "^6.14.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}
