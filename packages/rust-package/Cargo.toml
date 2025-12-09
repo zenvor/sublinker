@@ -9,21 +9,11 @@ axum = "0.8.7"
 tokio = { version = "1.48.0", features = ["full"] }
 
 # --- Configuration Management ---
-config = { version = "0.15.19", features = ["env", "toml"] }
-dotenvy = "0.15.7"
+config = { version = "0.15.19", features = ["toml"] }
 
-# --- ORM ---
+# --- Serialization ---
 serde = { version = "1.0.228", features = ["derive"] }
-
-# --- Yaml解析 ---
-serde_yaml = "0.9.34"
-
-# --- Database (SQLite) ---
-sqlx = { version = "0.8.6", features = ["runtime-tokio", "sqlite", "macros"] }
-
-# --- Error Handling ---
-thiserror = "2.0.17"
 
 # --- Logging & Tracing ---
 tracing = "0.1.43"
-tracing-subscriber = { version = "0.3.22", features = ["fmt", "env-filter"] }
+tracing-subscriber = { version = "0.3.22", features = ["fmt"] }
