@@ -26,6 +26,10 @@ impl Default for Config {
 
 impl Config {
     pub fn from_env() -> Result<Self, config::ConfigError> {
+
+        // TODO: 使用dotenvy去实现读取env环境的数据
+        dotenvy::dotenv().ok();
+
         let mut cfg = config::Config::builder()
             .add_source(config::File::with_name("config/default").required(false))
             .add_source(config::Environment::with_prefix("APP").separator("__"));
@@ -47,7 +51,6 @@ impl Config {
     }
 
     /// 尝试绑定端口，如果被占用则自动尝试下一个端口
-    /// 返回成功绑定的地址和更新后的配置
     pub async fn bind_with_port_retry(&mut self, max_retry: u16) -> Result<String, Box<dyn std::error::Error>> {
         let current_port = self.server.port;
         let max_port = current_port + max_retry;
