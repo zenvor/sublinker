@@ -10,9 +10,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
 
     // 加载配置
-    let mut config = Config::from_env().unwrap_or_else(|e| {
-        tracing::warn!("无法从环境加载配置，使用默认配置: {}", e);
-        Config::default()
+    let mut config = Config::auto_env().unwrap_or_else(|e| {
+        tracing::warn!("自动加载env变量失败，降级为使用toml配置: {}", e);
+        Config::from_env().unwrap_or_else(|e| {
+            tracing::warn!("无法从环境加载配置，使用默认配置: {}", e);
+            Config::default()
+        })
     });
 
     info!("🚀 启动应用...");
