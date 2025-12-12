@@ -4,13 +4,14 @@
 import Router from '@koa/router';
 import { renderSubYaml } from '../services/yamlService.js';
 import { getSubscription, isSubscriptionValid } from '../services/subscriptionService.js';
-import { updateAndCheck } from '../services/ipTracker.js';
+import { recordAccess } from '../services/accessTracker.js';
 
 const router = new Router();
 
 /**
  * GET /sub?token=xxx
  * 返回一级订阅 YAML
+ * 注意: 此接口只记录访问,不绑定IP。只有当 /sub 和 /provider 都被访问后才会在 /provider 中绑定IP
  */
 router.get('/sub', async (ctx) => {
   const { token } = ctx.query;
@@ -18,6 +19,13 @@ router.get('/sub', async (ctx) => {
   // 检查 token 参数
   if (!token) {
     ctx.fail(400, '缺少 token 参数');
+    return;
+  }
+
+  // 检查 User-Agent,只允许 Clash 客户端访问
+  const userAgent = ctx.headers['user-agent'] || '';
+  if (!userAgent.toLowerCase().includes('clash')) {
+    ctx.fail(403, '不支持的客户端');
     return;
   }
 
@@ -30,14 +38,9 @@ router.get('/sub', async (ctx) => {
     return;
   }
 
-  // 检查 IP 数量限制（使用 realIp 中间件解析的真实 IP）
-  const clientIp = ctx.realIp;
-  const allowed = updateAndCheck(token, clientIp, subscription.max_ips);
-  
-  if (!allowed) {
-    ctx.fail(403, `IP 绑定数量已达上限（${subscription.max_ips}）`);
-    return;
-  }
+  // 记录访问(不绑定IP)
+  recordAccess(token, 'sub');
+  console.log(`[Sub] 记录访问: token=${token.slice(0, 8)}... ua=${userAgent.slice(0, 30)}`);
 
   try {
     const yaml = renderSubYaml(token);

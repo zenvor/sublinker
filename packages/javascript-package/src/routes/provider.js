@@ -5,12 +5,14 @@ import Router from '@koa/router';
 import { getSubscription, isSubscriptionValid } from '../services/subscriptionService.js';
 import { updateAndCheck, getActiveIps } from '../services/ipTracker.js';
 import { generateProxiesYaml, generateEmptyProxiesYaml } from '../services/yamlService.js';
+import { recordAccess, hasBothAccessed } from '../services/accessTracker.js';
 
 const router = new Router();
 
 /**
  * GET /provider?token=xxx
  * 返回节点列表 YAML（proxy-providers 请求此接口）
+ * 注意: 只有当 /sub 和 /provider 都被访问后,才会绑定IP
  */
 router.get('/provider', async (ctx) => {
   const { token } = ctx.query;
@@ -18,6 +20,16 @@ router.get('/provider', async (ctx) => {
   // 检查 token 参数
   if (!token) {
     ctx.status = 400;
+    ctx.type = 'application/x-yaml; charset=utf-8';
+    ctx.body = generateEmptyProxiesYaml();
+    return;
+  }
+
+  // 检查 User-Agent,只允许 Clash 客户端访问
+  const userAgent = ctx.headers['user-agent'] || '';
+  if (!userAgent.toLowerCase().includes('clash')) {
+    console.log(`[Provider] UA检测失败: token=${token.slice(0, 8)}... ua=${userAgent.slice(0, 30)}`);
+    ctx.status = 403;
     ctx.type = 'application/x-yaml; charset=utf-8';
     ctx.body = generateEmptyProxiesYaml();
     return;
@@ -35,11 +47,23 @@ router.get('/provider', async (ctx) => {
     return;
   }
 
+  // 记录访问
+  recordAccess(token, 'provider');
+
+  // 检查是否完成二次访问(sub + provider)
+  if (!hasBothAccessed(token)) {
+    console.log(`[Provider] 未完成二次访问: token=${token.slice(0, 8)}... 等待访问 /sub`);
+    ctx.status = 403;
+    ctx.type = 'application/x-yaml; charset=utf-8';
+    ctx.body = generateEmptyProxiesYaml();
+    return;
+  }
+
   // 获取客户端真实 IP
   const clientIp = ctx.realIp || ctx.ip;
-  const userAgent = ctx.headers['user-agent'] || 'unknown';
 
   // IP 绑定检查（使用订阅的 max_ips 配置）
+  // 只有完成二次访问后才会执行IP绑定
   const allowed = updateAndCheck(token, clientIp, subscription.max_ips);
   
   if (!allowed) {
