@@ -2,7 +2,18 @@
 // 应用入口
 
 import Koa from 'koa';
-import 'dotenv/config'; // 加载 .env 文件
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// 获取当前文件路径
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// 加载根目录的 .env 文件 (monorepo架构)
+// packages/javascript-package/src -> ../../../.env
+dotenv.config({ path: path.join(__dirname, '../../../.env') });
+
 import Router from '@koa/router';
 import cors from '@koa/cors';
 import bodyParser from 'koa-bodyparser';
@@ -18,12 +29,7 @@ import subRouter from './routes/sub.js';
 import providerRouter from './routes/provider.js';
 import subscriptionRouter from './routes/subscription.js';
 import serve from 'koa-static';
-import path from 'path';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 
 const app = new Koa();
