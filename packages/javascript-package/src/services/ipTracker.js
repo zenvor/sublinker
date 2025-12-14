@@ -64,6 +64,10 @@ export function getActiveIpCount(token) {
 export function clearTokenIps(token) {
   db.prepare('DELETE FROM ip_bindings WHERE token = ?').run(token);
 }
+export function removeTokenIp(token, ip) {
+  const info = db.prepare('DELETE FROM ip_bindings WHERE token = ? AND ip = ?').run(token, ip);
+  return info.changes > 0;
+}
 
 /**
  * 获取所有订阅的全部已绑定 IP（用于比对非法访问）
