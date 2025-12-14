@@ -9,7 +9,7 @@ import {
   updateSubscription,
   deleteSubscription
 } from '../services/subscriptionService.js';
-import { getActiveIps, clearTokenIps } from '../services/ipTracker.js';
+import { getActiveIps, clearTokenIps, removeTokenIp } from '../services/ipTracker.js';
 import { authMiddleware } from '../middlewares/authMiddleware.js';
 
 const router = new Router({ prefix: '/admin' });
@@ -158,6 +158,8 @@ router.get('/subscription/:token/active-ips', async (ctx) => {
  */
 router.delete('/subscription/:token/active-ips', async (ctx) => {
   const { token } = ctx.params;
+  const body = ctx.request.body || {};
+  const hasIpField = Object.prototype.hasOwnProperty.call(body, 'ip');
   
   // 检查订阅是否存在
   const subscription = getSubscription(token);
@@ -165,9 +167,31 @@ router.delete('/subscription/:token/active-ips', async (ctx) => {
     ctx.fail(404, '订阅不存在');
     return;
   }
-  
+
+  const operator = ctx.state?.user?.username || 'unknown';
+
+  if (hasIpField) {
+    const ip = typeof body.ip === 'string' ? body.ip.trim() : body.ip;
+
+    if (!ip || typeof ip !== 'string') {
+      ctx.fail(400, 'IP 不能为空');
+      return;
+    }
+
+    const removed = removeTokenIp(token, ip);
+    if (!removed) {
+      console.log(`[Admin] 单个IP解绑失败: operator=${operator} token=${token.slice(0, 8)}... ip=${ip}`);
+      ctx.fail(404, 'IP 不存在');
+      return;
+    }
+
+    console.log(`[Admin] 单个IP解绑成功: operator=${operator} token=${token.slice(0, 8)}... ip=${ip}`);
+    ctx.success(null, 'IP 解绑成功');
+    return;
+  }
+
   clearTokenIps(token);
-  
+  console.log(`[Admin] 全部IP解绑成功: operator=${operator} token=${token.slice(0, 8)}...`);
   ctx.success(null, 'IP 解绑成功');
 });
 
