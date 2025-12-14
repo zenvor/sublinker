@@ -7,13 +7,13 @@ WORKDIR /app
 RUN apk add --no-cache python3 make g++
 
 # 复制 package 文件
-COPY package*.json ./
+COPY packages/javascript-package/package*.json ./
 
 # 安装依赖
 RUN npm ci
 
 # 复制源码
-COPY . .
+COPY packages/javascript-package/ .
 
 # 清理开发依赖，只保留生产依赖 (因为后面是直接复制 node_modules)
 RUN npm prune --production
@@ -24,7 +24,7 @@ FROM node:22-alpine
 WORKDIR /app
 
 # 复制 package 文件
-COPY package*.json ./
+COPY packages/javascript-package/package*.json ./
 
 # 从构建阶段复制 node_modules
 COPY --from=builder /app/node_modules ./node_modules
