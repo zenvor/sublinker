@@ -7,10 +7,11 @@ services:
       - "3000:3000"
     volumes:
       # 持久化数据库
-      - ./data:/app/data
+      - ../../data:/app/data
     environment:
       - NODE_ENV=production
       - PORT=3000
+      - DB_PATH=/app/data/cloakgate.db
       # 可选：自定义 API 域名
       # - API_DOMAIN=https://api.starying.top
     healthcheck:

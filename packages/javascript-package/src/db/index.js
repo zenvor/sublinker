@@ -2,6 +2,7 @@
 // 使用 better-sqlite3 管理 SQLite 数据库
 
 import Database from 'better-sqlite3';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -10,7 +11,10 @@ const __dirname = path.dirname(__filename);
 
 // 数据库文件路径（位于monorepo根目录的 data 文件夹）
 // packages/javascript-package/src/db -> ../../../../data
-const dbPath = path.join(__dirname, '../../../../data/cloakgate.db');
+const defaultDbPath = path.join(__dirname, '../../../../data/cloakgate.db');
+const dbPath = process.env.DB_PATH ? path.resolve(process.env.DB_PATH) : defaultDbPath;
+
+fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 
 // 创建数据库连接
 const db = new Database(dbPath);
