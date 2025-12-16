@@ -25,9 +25,10 @@ router.get('/provider', async (ctx) => {
     return;
   }
 
-  // 检查 User-Agent,只允许 Clash 客户端访问
+  // 检查 User-Agent,允许 Clash 和 Shadowrocket 客户端访问
   const userAgent = ctx.headers['user-agent'] || '';
-  if (!userAgent.toLowerCase().includes('clash')) {
+  const userAgentLower = userAgent.toLowerCase();
+  if (!userAgentLower.includes('clash') && !userAgentLower.includes('shadowrocket')) {
     console.log(`[Provider] UA检测失败: token=${token.slice(0, 8)}... ua=${userAgent.slice(0, 30)}`);
     ctx.status = 403;
     ctx.type = 'application/x-yaml; charset=utf-8';

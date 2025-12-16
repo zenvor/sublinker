@@ -22,9 +22,10 @@ router.get('/sub', async (ctx) => {
     return;
   }
 
-  // 检查 User-Agent,只允许 Clash 客户端访问
+  // 检查 User-Agent,允许 Clash 和 Shadowrocket 客户端访问
   const userAgent = ctx.headers['user-agent'] || '';
-  if (!userAgent.toLowerCase().includes('clash')) {
+  const userAgentLower = userAgent.toLowerCase();
+  if (!userAgentLower.includes('clash') && !userAgentLower.includes('shadowrocket')) {
     ctx.fail(403, '不支持的客户端');
     return;
   }

@@ -119,6 +119,27 @@ else
 fi
 echo ""
 
+# 测试7: Shadowrocket UA - 应该成功
+echo "测试7: Shadowrocket UA (应该通过)"
+echo "----------------------------------------"
+
+echo "  测试 'Shadowrocket/2850 CFNetwork/3860.200.71 Darwin/25.'"
+RESPONSE1=$(curl -s -w "\nHTTP_CODE:%{http_code}" -H "User-Agent: Shadowrocket/2850 CFNetwork/3860.200.71 Darwin/25." "$BASE_URL/sub?token=$VALID_TOKEN")
+HTTP_CODE1=$(echo "$RESPONSE1" | grep "HTTP_CODE" | cut -d: -f2)
+echo "  /sub HTTP状态码: $HTTP_CODE1"
+
+echo "  测试 /provider"
+RESPONSE2=$(curl -s -w "\nHTTP_CODE:%{http_code}" -H "User-Agent: Shadowrocket/2850 CFNetwork/3860.200.71 Darwin/25." "$BASE_URL/provider?token=$VALID_TOKEN")
+HTTP_CODE2=$(echo "$RESPONSE2" | grep "HTTP_CODE" | cut -d: -f2)
+echo "  /provider HTTP状态码: $HTTP_CODE2"
+
+if [ "$HTTP_CODE1" = "200" ] && [ "$HTTP_CODE2" = "200" ]; then
+  echo "✓ 通过: Shadowrocket UA 检测正常"
+else
+  echo "✗ 失败: /sub应该返回200(实际$HTTP_CODE1), /provider应该返回200(实际$HTTP_CODE2)"
+fi
+echo ""
+
 echo "=========================================="
 echo "测试完成"
 echo "=========================================="
