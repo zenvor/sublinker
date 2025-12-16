@@ -2,19 +2,13 @@
 // 应用入口
 
 import Koa from 'koa';
-import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import Router from '@koa/router';
 
 // 获取当前文件路径
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-// 加载根目录的 .env 文件 (monorepo架构)
-// packages/javascript-package/src -> ../../../.env
-dotenv.config({ path: path.join(__dirname, '../../../.env') });
-
-import Router from '@koa/router';
 import cors from '@koa/cors';
 import bodyParser from 'koa-bodyparser';
 import { PORT, ipBlockerConfig } from './config/appConfig.js';
