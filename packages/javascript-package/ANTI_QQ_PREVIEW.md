@@ -16,7 +16,7 @@
 ## 实现的功能
 
 ### 1. User-Agent检测 ✅
-- 只允许UA包含"clash"或"Clash"的请求
+- 允许UA包含"clash"、"Clash"、"shadowrocket"或"Shadowrocket"的请求
 - 大小写不敏感
 - 拒绝QQ预览爬虫、浏览器等其他UA
 
