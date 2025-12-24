@@ -94,6 +94,16 @@ export function updateSubscription(tokenStr, updates = {}) {
 }
 
 /**
+ * 获取订阅总数
+ * @returns {number} 订阅总数
+ */
+export function getSubscriptionCount() {
+  const stmt = db.prepare('SELECT COUNT(*) as count FROM subscriptions');
+  const result = stmt.get();
+  return result.count;
+}
+
+/**
  * 列出所有订阅
  * @param {number} limit - 限制数量
  * @param {number} offset - 偏移量

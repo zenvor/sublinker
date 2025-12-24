@@ -7,7 +7,8 @@ import {
   listSubscriptions,
   getSubscription,
   updateSubscription,
-  deleteSubscription
+  deleteSubscription,
+  getSubscriptionCount
 } from '../services/subscriptionService.js';
 import { getActiveIps, clearTokenIps, removeTokenIp } from '../services/ipTracker.js';
 import { authMiddleware } from '../middlewares/authMiddleware.js';
@@ -46,14 +47,18 @@ router.post('/subscription', async (ctx) => {
 router.get('/subscription', async (ctx) => {
   const { limit = 50, offset = 0 } = ctx.query;
   const subscriptions = listSubscriptions(parseInt(limit), parseInt(offset));
+  const total = getSubscriptionCount();
   
   // 为每个订阅添加活跃 IP 数量
-  const result = subscriptions.map(sub => ({
+  const rows = subscriptions.map(sub => ({
     ...sub,
     activeIpCount: getActiveIps(sub.token).length
   }));
   
-  ctx.success(result);
+  ctx.success({
+    rows,
+    count: total
+  });
 });
 
 /**
