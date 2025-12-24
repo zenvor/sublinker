@@ -27,7 +27,10 @@ export function updateAndCheck(token, ip, maxIps) {
   
   // 记录新 IP 的绑定（使用 INSERT OR IGNORE 避免重复）
   if (!alreadyBound) {
-    db.prepare('INSERT OR IGNORE INTO ip_bindings (token, ip) VALUES (?, ?)').run(token, ip);
+    db.prepare('INSERT OR IGNORE INTO ip_bindings (token, ip, last_seen_at) VALUES (?, ?, CURRENT_TIMESTAMP)').run(token, ip);
+  } else {
+    // 更新已存在 IP 的最后活跃时间
+    db.prepare('UPDATE ip_bindings SET last_seen_at = CURRENT_TIMESTAMP WHERE token = ? AND ip = ?').run(token, ip);
   }
   
   return true;
@@ -76,4 +79,49 @@ export function removeTokenIp(token, ip) {
 export function getAllActiveIps() {
   const rows = db.prepare('SELECT DISTINCT ip FROM ip_bindings').all();
   return new Set(rows.map(row => row.ip));
+}
+
+/**
+ * 清理指定 Token 的不活跃 IP
+ * @param {string} token - Token 字符串
+ * @param {number} inactiveDays - 不活跃天数阈值（默认7天）
+ * @returns {number} 清理的 IP 数量
+ */
+export function cleanupInactiveIps(token, inactiveDays = 7) {
+  const cutoffTime = new Date(Date.now() - inactiveDays * 24 * 60 * 60 * 1000).toISOString();
+  
+  const stmt = db.prepare(`
+    DELETE FROM ip_bindings 
+    WHERE token = ? AND last_seen_at < ?
+  `);
+  
+  const info = stmt.run(token, cutoffTime);
+  
+  if (info.changes > 0) {
+    console.log(`[ipTracker] 清理了 ${info.changes} 个不活跃IP (token=${token.slice(0, 8)}..., 阈值=${inactiveDays}天)`);
+  }
+  
+  return info.changes;
+}
+
+/**
+ * 清理所有订阅的不活跃 IP
+ * @param {number} inactiveDays - 不活跃天数阈值（默认7天）
+ * @returns {number} 清理的 IP 总数
+ */
+export function cleanupAllInactiveIps(inactiveDays = 7) {
+  const cutoffTime = new Date(Date.now() - inactiveDays * 24 * 60 * 60 * 1000).toISOString();
+  
+  const stmt = db.prepare(`
+    DELETE FROM ip_bindings 
+    WHERE last_seen_at < ?
+  `);
+  
+  const info = stmt.run(cutoffTime);
+  
+  if (info.changes > 0) {
+    console.log(`[ipTracker] 全局清理了 ${info.changes} 个不活跃IP (阈值=${inactiveDays}天)`);
+  }
+  
+  return info.changes;
 }

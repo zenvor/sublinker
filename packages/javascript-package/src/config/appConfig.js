@@ -37,3 +37,8 @@ export const ipBlockerConfig = {
   dryRun: process.env.IP_BLOCKER_DRY_RUN === 'true' // 调试模式，仅输出不执行
 };
 
+// IP 清理配置
+export const ipCleanupConfig = {
+  inactiveDays: parseInt(process.env.IP_CLEANUP_INACTIVE_DAYS) || 7 // 不活跃天数阈值（默认7天）
+};
+

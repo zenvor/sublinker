@@ -47,6 +47,7 @@ db.exec(`
     token TEXT NOT NULL,
     ip TEXT NOT NULL,
     bound_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    last_seen_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(token, ip)
   );
   
@@ -68,6 +69,28 @@ try {
   }
 } catch (error) {
   console.error('数据库迁移失败:', error.message);
+}
+
+// 数据库迁移：确保 ip_bindings 表包含 last_seen_at 列
+try {
+  const ipBindingsInfo = db.prepare('PRAGMA table_info(ip_bindings)').all();
+  const hasLastSeenColumn = ipBindingsInfo.some(col => col.name === 'last_seen_at');
+  
+  if (!hasLastSeenColumn) {
+    console.log('检测到旧版数据库结构，正在添加 last_seen_at 列...');
+    db.exec('ALTER TABLE ip_bindings ADD COLUMN last_seen_at DATETIME');
+    db.exec('UPDATE ip_bindings SET last_seen_at = bound_at');
+    console.log('last_seen_at 列添加成功');
+  }
+} catch (error) {
+  console.error('ip_bindings 表迁移失败:', error.message);
+}
+
+// 创建 last_seen_at 索引（在迁移完成后）
+try {
+  db.exec('CREATE INDEX IF NOT EXISTS idx_ip_bindings_last_seen ON ip_bindings(last_seen_at)');
+} catch (error) {
+  console.error('创建 last_seen_at 索引失败:', error.message);
 }
 
 console.log('数据库初始化完成:', dbPath);
