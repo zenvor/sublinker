@@ -3,6 +3,11 @@
 
 import db from '../db/index.js';
 
+// 清理频率限制缓存 (token -> 上次清理时间戳)
+const cleanupCache = new Map();
+// 清理间隔: 1小时 (小规模用户场景下足够)
+const CLEANUP_INTERVAL = 60 * 60 * 1000;
+
 /**
  * 检查 IP 绑定并更新记录
  * @param {string} token - Token 字符串
@@ -82,17 +87,30 @@ export function getAllActiveIps() {
 }
 
 /**
- * 清理指定 Token 的不活跃 IP
+ * 清理指定 Token 的不活跃 IP (带频率限制)
  * @param {string} token - Token 字符串
  * @param {number} inactiveDays - 不活跃天数阈值（默认7天）
  * @returns {number} 清理的 IP 数量
  */
 export function cleanupInactiveIps(token, inactiveDays = 7) {
+  // 检查是否需要清理（避免频繁执行）
+  const lastCleanupTime = cleanupCache.get(token) || 0;
+  const now = Date.now();
+  
+  if (now - lastCleanupTime < CLEANUP_INTERVAL) {
+    return 0; // 跳过清理
+  }
+  
+  // 更新清理时间戳
+  cleanupCache.set(token, now);
+  
+  // 计算截止时间 (UTC时间)
   const cutoffTime = new Date(Date.now() - inactiveDays * 24 * 60 * 60 * 1000).toISOString();
   
+  // 清理过期IP，同时处理NULL值（兼容迁移失败场景）
   const stmt = db.prepare(`
     DELETE FROM ip_bindings 
-    WHERE token = ? AND last_seen_at < ?
+    WHERE token = ? AND (last_seen_at IS NULL OR last_seen_at < ?)
   `);
   
   const info = stmt.run(token, cutoffTime);
@@ -112,9 +130,10 @@ export function cleanupInactiveIps(token, inactiveDays = 7) {
 export function cleanupAllInactiveIps(inactiveDays = 7) {
   const cutoffTime = new Date(Date.now() - inactiveDays * 24 * 60 * 60 * 1000).toISOString();
   
+  // 清理过期IP，同时处理NULL值
   const stmt = db.prepare(`
     DELETE FROM ip_bindings 
-    WHERE last_seen_at < ?
+    WHERE last_seen_at IS NULL OR last_seen_at < ?
   `);
   
   const info = stmt.run(cutoffTime);
