@@ -152,7 +152,8 @@ router.get('/subscription/:token/active-ips', async (ctx) => {
     count: activeIps.length,
     ips: activeIps.map(item => ({
       ip: item.ip,
-      boundAt: new Date(item.boundAt).toLocaleString('zh-CN')
+      boundAt: new Date(item.boundAt).toLocaleString('zh-CN'),
+      lastSeenAt: new Date(item.lastSeenAt).toLocaleString('zh-CN')
     }))
   });
 });

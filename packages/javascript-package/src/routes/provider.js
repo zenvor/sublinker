@@ -3,7 +3,7 @@
 
 import Router from '@koa/router';
 import { getSubscription, isSubscriptionValid } from '../services/subscriptionService.js';
-import { updateAndCheck, getActiveIps, cleanupInactiveIps } from '../services/ipTracker.js';
+import { updateAndCheck, getActiveIps, getActiveIpCount, cleanupInactiveIps } from '../services/ipTracker.js';
 import { generateProxiesYaml, generateEmptyProxiesYaml } from '../services/yamlService.js';
 import { recordAccess, hasBothAccessed } from '../services/accessTracker.js';
 import { ipCleanupConfig } from '../config/appConfig.js';
@@ -13,7 +13,11 @@ const router = new Router();
 /**
  * GET /provider?token=xxx
  * 返回节点列表 YAML（proxy-providers 请求此接口）
- * 注意: 只有当 /sub 和 /provider 都被访问后,才会绑定IP
+ * 
+ * 混合模式策略:
+ * 1. 首次使用: 必须完成二次访问 (/sub + /provider)
+ * 2. 已绑定用户: 允许在IP槽位未满时自动绑定新IP
+ * 3. 槽位已满: 拒绝新IP，需等待自动清理或管理员手动清理
  */
 router.get('/provider', async (ctx) => {
   const { token } = ctx.query;
@@ -52,8 +56,28 @@ router.get('/provider', async (ctx) => {
   // 记录访问
   recordAccess(token, 'provider');
 
-  // 检查是否完成二次访问(sub + provider)
-  if (!hasBothAccessed(token)) {
+  // 获取客户端真实 IP
+  const clientIp = ctx.realIp || ctx.ip;
+
+  // 清理不活跃的 IP（内置1小时频率限制，避免频繁执行）
+  cleanupInactiveIps(token, ipCleanupConfig.inactiveDays);
+
+  // 混合模式: 检查访问权限
+  const hasCompletedInitialSetup = hasBothAccessed(token);
+  const currentIpCount = getActiveIpCount(token);
+  const isOldUser = currentIpCount > 0;
+
+  // 情况1: 完成二次访问 → 正常处理
+  if (hasCompletedInitialSetup) {
+    // 继续执行IP绑定检查
+  }
+  // 情况2: 未完成二次访问，但是老用户 → 允许尝试自动绑定新IP
+  else if (isOldUser) {
+    console.log(`[Provider] 老用户尝试自动绑定: token=${token.slice(0, 8)}... ip=${clientIp}`);
+    // 继续执行IP绑定检查（updateAndCheck会原子性检查槽位）
+  }
+  // 情况3: 未完成二次访问，且无历史绑定 → 拒绝
+  else {
     console.log(`[Provider] 未完成二次访问: token=${token.slice(0, 8)}... 等待访问 /sub`);
     ctx.status = 403;
     ctx.type = 'application/x-yaml; charset=utf-8';
@@ -61,20 +85,23 @@ router.get('/provider', async (ctx) => {
     return;
   }
 
-  // 获取客户端真实 IP
-  const clientIp = ctx.realIp || ctx.ip;
-
-  // 清理不活跃的 IP（内置1小时频率限制，避免频繁执行）
-  cleanupInactiveIps(token, ipCleanupConfig.inactiveDays);
-
   // IP 绑定检查（使用订阅的 max_ips 配置）
-  // 只有完成二次访问后才会执行IP绑定
-  const allowed = updateAndCheck(token, clientIp, subscription.max_ips);
+  // updateAndCheck 内部会原子性地检查槽位并绑定IP，避免竞态条件
+  let allowed = false;
+  try {
+    allowed = updateAndCheck(token, clientIp, subscription.max_ips);
+  } catch (err) {
+    console.error(`[Provider] IP绑定检查异常: token=${token.slice(0, 8)}... ip=${clientIp}`, err);
+    ctx.status = 500;
+    ctx.type = 'application/x-yaml; charset=utf-8';
+    ctx.body = generateEmptyProxiesYaml();
+    return;
+  }
   
   if (!allowed) {
     // 超限：返回 403 IP 绑定数量超限
     const activeIps = getActiveIps(token);
-    console.log(`[Provider] IP 超限: token=${token.slice(0, 8)}... ip=${clientIp} bound=${activeIps.length}/${subscription.max_ips}`);
+    console.log(`[Provider] IP超限: token=${token.slice(0, 8)}... ip=${clientIp} bound=${activeIps.length}/${subscription.max_ips}`);
     ctx.status = 403;
     ctx.type = 'application/x-yaml; charset=utf-8';
     ctx.body = generateEmptyProxiesYaml();
@@ -82,7 +109,8 @@ router.get('/provider', async (ctx) => {
   }
 
   // 通过：返回真实节点列表
-  console.log(`[Provider] 允许访问: token=${token.slice(0, 8)}... ip=${clientIp} ua=${userAgent.slice(0, 30)}`);
+  // 注意：此时IP已经成功绑定或更新活跃时间
+  console.log(`[Provider] 允许访问: token=${token.slice(0, 8)}... ip=${clientIp}`);
   
   try {
     // 使用默认节点配置（已移除 node_profile 字段）
