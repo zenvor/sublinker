@@ -64,7 +64,7 @@ router.get('/provider', async (ctx) => {
   // 获取客户端真实 IP
   const clientIp = ctx.realIp || ctx.ip;
 
-  // 清理不活跃的 IP
+  // 清理不活跃的 IP（内置1小时频率限制，避免频繁执行）
   cleanupInactiveIps(token, ipCleanupConfig.inactiveDays);
 
   // IP 绑定检查（使用订阅的 max_ips 配置）
