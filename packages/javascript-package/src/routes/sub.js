@@ -11,7 +11,7 @@ const router = new Router();
 /**
  * GET /sub?token=xxx
  * 返回一级订阅 YAML
- * 注意: 此接口只记录访问,不绑定IP。只有当 /sub 和 /provider 都被访问后才会在 /provider 中绑定IP
+ * 注意: 此接口只记录访问,不绑定IP。新用户必须先访问此接口才能访问 /provider
  */
 router.get('/sub', async (ctx) => {
   const { token } = ctx.query;

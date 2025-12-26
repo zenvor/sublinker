@@ -111,20 +111,25 @@ export function cleanupInactiveIps(token, inactiveDays = 7) {
   
   // 更新清理时间戳
   cleanupCache.set(token, now);
+ 
+  const cutoffModifier = `-${inactiveDays} days`;
+
+  const toBeCleanedStmt = db.prepare(`
+    SELECT ip, last_seen_at FROM ip_bindings 
+    WHERE token = ? AND (last_seen_at IS NULL OR datetime(last_seen_at) < datetime('now', ?))
+  `);
+  const toBeCleanedIps = toBeCleanedStmt.all(token, cutoffModifier);
   
-  // 计算截止时间 (UTC时间)
-  const cutoffTime = new Date(Date.now() - inactiveDays * 24 * 60 * 60 * 1000).toISOString();
-  
-  // 清理过期IP，同时处理NULL值（兼容迁移失败场景）
   const stmt = db.prepare(`
     DELETE FROM ip_bindings 
-    WHERE token = ? AND (last_seen_at IS NULL OR last_seen_at < ?)
+    WHERE token = ? AND (last_seen_at IS NULL OR datetime(last_seen_at) < datetime('now', ?))
   `);
   
-  const info = stmt.run(token, cutoffTime);
+  const info = stmt.run(token, cutoffModifier);
   
   if (info.changes > 0) {
-    console.log(`[ipTracker] 清理了 ${info.changes} 个不活跃IP (token=${token.slice(0, 8)}..., 阈值=${inactiveDays}天)`);
+    const ips = toBeCleanedIps.map(row => `${row.ip}(${row.last_seen_at || 'NULL'})`).join(', ');
+    console.log(`[ipTracker] 清理了 ${info.changes} 个不活跃IP (token=${token.slice(0, 8)}..., 阈值=${inactiveDays}天, IPs: ${ips})`);
   }
   
   return info.changes;
@@ -136,15 +141,15 @@ export function cleanupInactiveIps(token, inactiveDays = 7) {
  * @returns {number} 清理的 IP 总数
  */
 export function cleanupAllInactiveIps(inactiveDays = 7) {
-  const cutoffTime = new Date(Date.now() - inactiveDays * 24 * 60 * 60 * 1000).toISOString();
+  const cutoffModifier = `-${inactiveDays} days`;
   
   // 清理过期IP，同时处理NULL值
   const stmt = db.prepare(`
     DELETE FROM ip_bindings 
-    WHERE last_seen_at IS NULL OR last_seen_at < ?
+    WHERE last_seen_at IS NULL OR datetime(last_seen_at) < datetime('now', ?)
   `);
   
-  const info = stmt.run(cutoffTime);
+  const info = stmt.run(cutoffModifier);
   
   if (info.changes > 0) {
     console.log(`[ipTracker] 全局清理了 ${info.changes} 个不活跃IP (阈值=${inactiveDays}天)`);

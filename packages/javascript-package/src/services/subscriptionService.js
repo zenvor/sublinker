@@ -140,7 +140,8 @@ export function isSubscriptionValid(subscription) {
   }
   
   if (subscription.expired_at) {
-    const expiredAt = new Date(subscription.expired_at);
+    const raw = String(subscription.expired_at);
+    const expiredAt = raw.includes('T') ? new Date(raw) : new Date(raw.replace(' ', 'T') + 'Z');
     if (expiredAt < new Date()) {
       return { valid: false, reason: '订阅已过期' };
     }
