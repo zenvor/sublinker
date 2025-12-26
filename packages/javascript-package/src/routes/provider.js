@@ -5,7 +5,7 @@ import Router from '@koa/router';
 import { getSubscription, isSubscriptionValid } from '../services/subscriptionService.js';
 import { updateAndCheck, getActiveIps, getActiveIpCount, cleanupInactiveIps } from '../services/ipTracker.js';
 import { generateProxiesYaml, generateEmptyProxiesYaml } from '../services/yamlService.js';
-import { recordAccess, hasBothAccessed } from '../services/accessTracker.js';
+import { recordAccess, hasAccessedSub } from '../services/accessTracker.js';
 import { ipCleanupConfig } from '../config/appConfig.js';
 
 const router = new Router();
@@ -15,7 +15,7 @@ const router = new Router();
  * 返回节点列表 YAML（proxy-providers 请求此接口）
  * 
  * 混合模式策略:
- * 1. 首次使用: 必须完成二次访问 (/sub + /provider)
+ * 1. 首次使用: 必须先访问 /sub
  * 2. 已绑定用户: 允许在IP槽位未满时自动绑定新IP
  * 3. 槽位已满: 拒绝新IP，需等待自动清理或管理员手动清理
  */
@@ -59,26 +59,25 @@ router.get('/provider', async (ctx) => {
   // 获取客户端真实 IP
   const clientIp = ctx.realIp || ctx.ip;
 
-  // 清理不活跃的 IP（内置1小时频率限制，避免频繁执行）
-  cleanupInactiveIps(token, ipCleanupConfig.inactiveDays);
-
   // 混合模式: 检查访问权限
-  const hasCompletedInitialSetup = hasBothAccessed(token);
+  const hasVisitedSub = hasAccessedSub(token);
   const currentIpCount = getActiveIpCount(token);
   const isOldUser = currentIpCount > 0;
 
-  // 情况1: 完成二次访问 → 正常处理
-  if (hasCompletedInitialSetup) {
-    // 继续执行IP绑定检查
+  // 清理不活跃的 IP（内置1小时频率限制，避免频繁执行）
+  cleanupInactiveIps(token, ipCleanupConfig.inactiveDays);
+
+  // 情况1: 已访问过 /sub → 正常处理
+  if (hasVisitedSub) {
+    console.log(`[Provider] 已访问 /sub: token=${token.slice(0, 8)}... ip=${clientIp} boundIPs=${currentIpCount}`);
   }
-  // 情况2: 未完成二次访问，但是老用户 → 允许尝试自动绑定新IP
+  // 情况2: 未访问 /sub，但是老用户 → 允许尝试自动绑定新IP
   else if (isOldUser) {
-    console.log(`[Provider] 老用户尝试自动绑定: token=${token.slice(0, 8)}... ip=${clientIp}`);
-    // 继续执行IP绑定检查（updateAndCheck会原子性检查槽位）
+    console.log(`[Provider] 老用户自动绑定: token=${token.slice(0, 8)}... ip=${clientIp} boundIPs=${currentIpCount}`);
   }
-  // 情况3: 未完成二次访问，且无历史绑定 → 拒绝
+  // 情况3: 未访问 /sub，且无历史绑定 → 拒绝
   else {
-    console.log(`[Provider] 未完成二次访问: token=${token.slice(0, 8)}... 等待访问 /sub`);
+    console.log(`[Provider] 需先访问 /sub: token=${token.slice(0, 8)}... ip=${clientIp} boundIPs=0`);
     ctx.status = 403;
     ctx.type = 'application/x-yaml; charset=utf-8';
     ctx.body = generateEmptyProxiesYaml();

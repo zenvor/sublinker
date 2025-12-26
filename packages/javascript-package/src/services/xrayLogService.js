@@ -83,9 +83,10 @@ export async function login() {
 /**
  * 获取 Xray 日志
  * @param {number} count - 获取的日志数量
+ * @param {number} retryLeft - 401 场景下的剩余重试次数
  * @returns {Promise<Array|null>} 日志数组或 null
  */
-export async function getXrayLogs(count = 50) {
+export async function getXrayLogs(count = 50, retryLeft = 1) {
   try {
     const response = await client.post(`/panel/api/server/xraylogs/${count}`, {
       filter: '',
@@ -102,12 +103,12 @@ export async function getXrayLogs(count = 50) {
     return null;
   } catch (error) {
     // 如果是 401，尝试重新登录
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 && retryLeft > 0) {
       console.log('[xrayLogService] 尝试重新登录...');
       const loginSuccess = await login();
       if (loginSuccess) {
         // 重试获取日志
-        return getXrayLogs(count);
+        return getXrayLogs(count, retryLeft - 1);
       }
     }
     console.error('[xrayLogService] 获取日志请求失败:', error.message);

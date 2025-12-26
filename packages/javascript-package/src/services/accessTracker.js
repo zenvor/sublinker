@@ -34,17 +34,17 @@ export function recordAccess(token, endpoint) {
 }
 
 /**
- * 检查token是否已完成二次访问(sub + provider)
+ * 检查token是否已访问过 /sub
  * @param {string} token - Token 字符串
- * @returns {boolean} 是否已完成二次访问
+ * @returns {boolean} 是否已访问过 /sub
  */
-export function hasBothAccessed(token) {
+export function hasAccessedSub(token) {
   const record = accessRecords.get(token);
   if (!record) {
     return false;
   }
   
-  return record.sub && record.provider;
+  return record.sub;
 }
 
 /**
