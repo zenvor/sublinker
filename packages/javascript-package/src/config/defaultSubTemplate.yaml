@@ -35,75 +35,111 @@ proxy-groups:
     interval: 300
     tolerance: 50
 rule-providers:
-  YouTube:
+  reject:
+    type: http
+    behavior: domain
+    url: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/reject.txt'
+    path: ./ruleset/reject.yaml
+    interval: 86400
+
+  icloud:
+    type: http
+    behavior: domain
+    url: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/icloud.txt'
+    path: ./ruleset/icloud.yaml
+    interval: 86400
+
+  apple:
+    type: http
+    behavior: domain
+    url: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/apple.txt'
+    path: ./ruleset/apple.yaml
+    interval: 86400
+
+  google:
+    type: http
+    behavior: domain
+    url: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/google.txt'
+    path: ./ruleset/google.yaml
+    interval: 86400
+
+  proxy:
+    type: http
+    behavior: domain
+    url: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/proxy.txt'
+    path: ./ruleset/proxy.yaml
+    interval: 86400
+
+  direct:
+    type: http
+    behavior: domain
+    url: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/direct.txt'
+    path: ./ruleset/direct.yaml
+    interval: 86400
+
+  private:
+    type: http
+    behavior: domain
+    url: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/private.txt'
+    path: ./ruleset/private.yaml
+    interval: 86400
+
+  gfw:
+    type: http
+    behavior: domain
+    url: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/gfw.txt'
+    path: ./ruleset/gfw.yaml
+    interval: 86400
+
+  tld-not-cn:
+    type: http
+    behavior: domain
+    url: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/tld-not-cn.txt'
+    path: ./ruleset/tld-not-cn.yaml
+    interval: 86400
+
+  telegramcidr:
+    type: http
+    behavior: ipcidr
+    url: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/telegramcidr.txt'
+    path: ./ruleset/telegramcidr.yaml
+    interval: 86400
+
+  cncidr:
+    type: http
+    behavior: ipcidr
+    url: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/cncidr.txt'
+    path: ./ruleset/cncidr.yaml
+    interval: 86400
+
+  lancidr:
+    type: http
+    behavior: ipcidr
+    url: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/lancidr.txt'
+    path: ./ruleset/lancidr.yaml
+    interval: 86400
+
+  applications:
     type: http
     behavior: classical
-    url: 'https://api-gz.hosbbq.com/nus74f89st1/Y.yml'
+    url: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/applications.txt'
+    path: ./ruleset/applications.yaml
     interval: 86400
-    path: ./ruleset/YouTube.yml
-  SteamCN:
-    type: http
-    behavior: classical
-    url: 'https://api-gz.hosbbq.com/nus74f89st1/SC.yml'
-    interval: 86400
-    path: ./ruleset/SteamCN.yml
-  Bahamut:
-    type: http
-    behavior: classical
-    url: 'https://api-gz.hosbbq.com/nus74f89st1/Ba.yml'
-    interval: 86400
-    path: ./ruleset/Bahamut.yml
-  DMM:
-    type: http
-    behavior: classical
-    url: 'https://api-gz.hosbbq.com/nus74f89st1/DM.yml'
-    interval: 86400
-    path: ./ruleset/DMM.yml
-  ChinaMax:
-    type: http
-    behavior: classical
-    url: 'https://api-gz.hosbbq.com/nus74f89st1/C.yml'
-    interval: 86400
-    path: ./ruleset/ChinaMax.yml
 
 rules:
-  - DOMAIN,ic.adobe.io,REJECT
-  - DOMAIN,dyzt55url8.adobe.io,REJECT
-  - DOMAIN,gw8gfjbs05.adobe.io,REJECT
-  - DOMAIN,0mo5a70cqa.adobe.io,REJECT
-  - DOMAIN,ij0gdyrfka.adobe.io,REJECT
-  - DOMAIN,dxyeyf6ecy.adobe.io,REJECT
-  - DOMAIN,1hzopx6nz7.adobe.io,REJECT
-  - DOMAIN,ph0f2h2csf.adobe.io,REJECT
-  - DOMAIN,23ynjitwt5.adobe.io,REJECT
-  - DOMAIN,crs.cr.adobe.com,REJECT
-  - DOMAIN,www.photoshop.com,REJECT
-  - DOMAIN,cc-cdn.adobe.com,REJECT
-  - DOMAIN,photos.adobe.io,REJECT
-  - DOMAIN,cc-api-data.adobe.io,REJECT
-  - DOMAIN,lcs-cops.adobe.io,REJECT
-  - DOMAIN,cai-splunk-proxy.adobe.io,REJECT
-  - DOMAIN-KEYWORD,sjtu.edu.cn,DIRECT
-  - DOMAIN-KEYWORD,linkedin,DMIT
-  - DOMAIN-SUFFIX,okex.com,DMIT
-  - DOMAIN-SUFFIX,oklink.com,DMIT
-  - DOMAIN-SUFFIX,okx.com,DMIT
-  - RULE-SET,SteamCN,DIRECT
-  - RULE-SET,Bahamut,DMIT
-  - RULE-SET,DMM,DMIT
-  - RULE-SET,ChinaMax,DIRECT
-  - DOMAIN,local.adguard.org,DIRECT
-  - DOMAIN-SUFFIX,local,DIRECT
-  - IP-CIDR,127.0.0.0/8,DIRECT
-  - IP-CIDR,172.16.0.0/12,DIRECT
-  - IP-CIDR,192.168.0.0/16,DIRECT
-  - IP-CIDR,10.0.0.0/8,DIRECT
-  - IP-CIDR,17.0.0.0/8,DIRECT
-  - IP-CIDR,100.64.0.0/10,DIRECT
-  - IP-CIDR,224.0.0.0/4,DIRECT
-  - IP-CIDR,203.0.113.0/24,DIRECT
-  - IP-CIDR,192.0.2.0/24,DIRECT
-  - IP-CIDR6,fe80::/10,DIRECT
-  - GEOIP,CN,DIRECT
+  - RULE-SET,applications,DIRECT
+  - DOMAIN,clash.razord.top,DIRECT
+  - DOMAIN,yacd.haishan.me,DIRECT
+  - RULE-SET,private,DIRECT
+  - RULE-SET,reject,REJECT
+  - RULE-SET,icloud,DIRECT
+  - RULE-SET,apple,DIRECT
+  - RULE-SET,google,PROXY
+  - RULE-SET,proxy,PROXY
+  - RULE-SET,direct,DIRECT
+  - RULE-SET,lancidr,DIRECT
+  - RULE-SET,cncidr,DIRECT
+  - RULE-SET,telegramcidr,PROXY
   - GEOIP,LAN,DIRECT
-  - MATCH,DMIT
+  - GEOIP,CN,DIRECT
+  - MATCH,PROXY
