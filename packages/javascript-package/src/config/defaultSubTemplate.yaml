@@ -75,8 +75,10 @@ proxy-providers:
     format: yaml
     health-check:
       enable: true
-      url: http://www.gstatic.com/generate_204
+      url: https://cp.cloudflare.com/generate_204
       interval: 300
+      timeout: 5000
+      lazy: true
 
 proxy-groups:
   - name: PROXY
@@ -84,15 +86,7 @@ proxy-groups:
     use:
       - main
     proxies:
-      - Auto
-
-  - name: Auto
-    type: url-test
-    use:
-      - main
-    url: http://www.gstatic.com/generate_204
-    interval: 300
-    tolerance: 50
+      - DIRECT
 
 rules:
   # ============================================
@@ -100,35 +94,40 @@ rules:
   # 使用 Loyalsoldier 增强版 geosite/geoip
   # ============================================
 
-  # 1. 广告拦截 (可选，如需关闭删除此行)
+  # 广告拦截 (可选，如需关闭删除此行)
   - GEOSITE,category-ads-all,REJECT
 
-  # 2. 私有域名 → 直连 (geosite:private)
+  # 特殊代理规则 - 对齐 v2rayN (需要代理才能稳定访问)
+  - DOMAIN,www.icloud.com,PROXY
+  - DOMAIN-SUFFIX,icloud-content.com,PROXY
+  - GEOSITE,google,PROXY
+
+  # 私有域名 → 直连 (geosite:private)
   - GEOSITE,private,DIRECT
 
-  # 4. iCloud 服务 → 直连
+  # iCloud 服务 → 直连 (除上述特殊域名外)
   - GEOSITE,icloud,DIRECT
 
-  # 5. Apple 中国服务 → 直连 (Loyalsoldier 增强)
+  # Apple 中国服务 → 直连 (Loyalsoldier 增强)
   - GEOSITE,apple-cn,DIRECT
 
-  # 6. Google 中国服务 → 直连 (Loyalsoldier 增强)
-  - GEOSITE,google-cn,DIRECT
-
-  # 7. 游戏平台中国服务 → 直连 (Steam/EA/Blizzard 等)
+  # 游戏平台中国服务 → 直连 (Steam/EA/Blizzard 等)
   - GEOSITE,category-games@cn,DIRECT
 
-  # 8. 中国顶级域名 → 直连
+  # 中国顶级域名 → 直连
   - GEOSITE,tld-cn,DIRECT
 
-  # 9. 中国域名 → 直连 (geosite:cn)
+  # 中国域名 → 直连 (geosite:cn)
   - GEOSITE,cn,DIRECT
 
-  # 10. 私有 IP → 直连 (geoip:private)
+  # 非中国域名 → 代理 (对齐 v2rayN geolocation-!cn)
+  - GEOSITE,geolocation-!cn,PROXY
+
+  # 私有 IP → 直连 (geoip:private)
   - GEOIP,private,DIRECT,no-resolve
 
-  # 11. 中国 IP → 直连 (geoip:cn)
+  # 中国 IP → 直连 (geoip:cn)
   - GEOIP,CN,DIRECT,no-resolve
 
-  # 12. 其余全部 → 代理
+  # 其余全部 → 代理
   - MATCH,PROXY
