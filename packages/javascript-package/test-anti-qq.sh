@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # 防QQ预览机制测试脚本
-# 测试UA检测和二次访问验证功能
+# 测试 UA 检测和 IP 绑定功能
 
 echo "=========================================="
-echo "防QQ预览机制测试"
+echo "防 QQ 预览机制测试"
 echo "=========================================="
 echo ""
 
@@ -62,23 +62,21 @@ else
 fi
 echo ""
 
-# 测试4: 访问记录持久性测试
-# 说明: 在测试3中已经访问了/sub,访问记录会保留5分钟
-# 在这个时间窗口内,直接访问/provider应该成功(模拟Clash定期刷新节点)
-echo "测试4: 访问记录持久性 (已访问/sub,直接访问/provider应该成功)"
+# 测试4: 直接访问 /provider - 应该成功（无需先访问 /sub）
+echo "测试4: 直接访问 /provider (应该成功并绑定IP)"
 echo "----------------------------------------"
 RESPONSE=$(curl -s -w "\nHTTP_CODE:%{http_code}" -H "User-Agent: clash" "$BASE_URL/provider?token=$VALID_TOKEN")
 HTTP_CODE=$(echo "$RESPONSE" | grep "HTTP_CODE" | cut -d: -f2)
 echo "HTTP状态码: $HTTP_CODE"
 if [ "$HTTP_CODE" = "200" ]; then
-  echo "✓ 通过: 访问记录持久性正常,5分钟内可直接访问provider"
+  echo "✓ 通过: 直接访问 /provider 成功"
 else
   echo "✗ 失败: 应该返回200,实际返回$HTTP_CODE"
 fi
 echo ""
 
 # 测试5: 先访问 /sub 再访问 /provider - 应该成功
-echo "测试5: 二次访问验证 (先/sub后/provider,应该成功)"
+echo "测试5: 先 /sub 后 /provider (模拟 Clash 正常流程)"
 echo "----------------------------------------"
 
 echo "  步骤1: 访问 /sub"
@@ -92,7 +90,7 @@ HTTP_CODE2=$(echo "$RESPONSE2" | grep "HTTP_CODE" | cut -d: -f2)
 echo "  /provider HTTP状态码: $HTTP_CODE2"
 
 if [ "$HTTP_CODE1" = "200" ] && [ "$HTTP_CODE2" = "200" ]; then
-  echo "✓ 通过: 二次访问验证成功"
+  echo "✓ 通过: Clash 正常流程成功"
 else
   echo "✗ 失败: /sub应该返回200(实际$HTTP_CODE1), /provider应该返回200(实际$HTTP_CODE2)"
 fi
@@ -137,6 +135,19 @@ if [ "$HTTP_CODE1" = "200" ] && [ "$HTTP_CODE2" = "200" ]; then
   echo "✓ 通过: Shadowrocket UA 检测正常"
 else
   echo "✗ 失败: /sub应该返回200(实际$HTTP_CODE1), /provider应该返回200(实际$HTTP_CODE2)"
+fi
+echo ""
+
+# 测试8: 无UA访问 /provider - 应该被拒绝
+echo "测试8: 无UA访问 /provider (应该被拒绝)"
+echo "----------------------------------------"
+RESPONSE=$(curl -s -w "\nHTTP_CODE:%{http_code}" "$BASE_URL/provider?token=$VALID_TOKEN")
+HTTP_CODE=$(echo "$RESPONSE" | grep "HTTP_CODE" | cut -d: -f2)
+echo "HTTP状态码: $HTTP_CODE"
+if [ "$HTTP_CODE" = "403" ]; then
+  echo "✓ 通过: 正确拒绝了无UA的 /provider 请求"
+else
+  echo "✗ 失败: 应该返回403,实际返回$HTTP_CODE"
 fi
 echo ""
 
