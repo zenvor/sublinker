@@ -3,9 +3,10 @@
 
 import Router from '@koa/router'
 import { getSubscription, isSubscriptionValid } from '../services/subscriptionService.js'
-import { updateAndCheck, getActiveIps, cleanupInactiveIps } from '../services/ipTracker.js'
+import { updateAndCheck, getActiveIps, getActiveIpCount, cleanupInactiveIps } from '../services/ipTracker.js'
 import { generateProxiesYaml, generateEmptyProxiesYaml } from '../services/yamlService.js'
 import { ipCleanupConfig } from '../config/appConfig.js'
+import { recordIpHistory } from '../services/ipHistoryService.js'
 
 const router = new Router()
 
@@ -69,6 +70,13 @@ router.get('/provider', async (ctx) => {
     ctx.type = 'application/x-yaml; charset=utf-8'
     ctx.body = generateEmptyProxiesYaml()
     return
+  }
+
+  // 记录 IP 历史（在绑定检查后，只要有绑定IP就记录）
+  // 这样可以追踪用户所有使用过的IP，包括首次绑定和后续访问
+  const currentBindings = getActiveIpCount(token)
+  if (currentBindings > 0) {
+    recordIpHistory(token, clientIp)
   }
 
   if (!allowed) {
