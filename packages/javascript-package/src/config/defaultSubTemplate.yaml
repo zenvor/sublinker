@@ -1,12 +1,70 @@
 # CloakGate 一级订阅模板
-# __TOKEN__ 占位符会被替换为真实 token
+# 规则模式: V4-绕过大陆 (Whitelist) - 完全对齐 v2rayN
+# 规则来源: Loyalsoldier/v2ray-rules-dat (增强版 geoip/geosite)
+# 兼容: mihomo (Clash Meta)
 
 port: 7890
 socks-port: 7891
 allow-lan: true
-mode: Rule
+mode: rule
 log-level: info
 external-controller: 127.0.0.1:9090
+
+# GEO 数据模式: true 使用 .dat 文件，false 使用 .mmdb 文件
+geodata-mode: true
+
+# GEO 自动更新
+geo-auto-update: true
+geo-update-interval: 24
+
+# 自定义 GEO 下载地址 (Loyalsoldier 增强版)
+geox-url:
+  geoip: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geoip.dat'
+  geosite: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geosite.dat'
+
+# DNS 配置 - 对齐 v2rayN 的 DNS 行为
+dns:
+  enable: true
+  listen: 0.0.0.0:53
+  enhanced-mode: fake-ip
+  fake-ip-range: 198.18.0.1/16
+  fake-ip-filter:
+    - '*.lan'
+    - '*.local'
+    - localhost.ptlogin2.qq.com
+
+  # 用于解析 DoH/DoT 域名的 DNS，必须为纯 IP
+  default-nameserver:
+    - 119.29.29.29
+    - 223.5.5.5
+
+  # 主要 DNS 服务器
+  nameserver:
+    - https://doh.pub/dns-query
+    - https://dns.alidns.com/dns-query
+
+  # 海外 DNS 回退
+  fallback:
+    - tls://8.8.8.8:853
+    - tls://1.1.1.1:853
+
+  fallback-filter:
+    geoip: true
+    geoip-code: CN
+
+  # 按域名指定 DNS
+  nameserver-policy:
+    # 中国域名 → 国内 DNS
+    'geosite:cn,private':
+      - https://doh.pub/dns-query
+      - https://dns.alidns.com/dns-query
+    # 开发者常用网站 → 国外 DNS (防止 DNS 污染)
+    'geosite:github':
+      - tls://1.1.1.1:853
+      - tls://8.8.8.8:853
+    'geosite:docker':
+      - tls://1.1.1.1:853
+      - tls://8.8.8.8:853
 
 proxy-providers:
   main:
@@ -14,13 +72,14 @@ proxy-providers:
     url: '__API_DOMAIN__/provider?token=__TOKEN__'
     path: ./providers/main.yaml
     interval: 600
+    format: yaml
     health-check:
       enable: true
       url: http://www.gstatic.com/generate_204
       interval: 300
 
 proxy-groups:
-  - name: DMIT
+  - name: PROXY
     type: select
     use:
       - main
@@ -34,112 +93,42 @@ proxy-groups:
     url: http://www.gstatic.com/generate_204
     interval: 300
     tolerance: 50
-rule-providers:
-  reject:
-    type: http
-    behavior: domain
-    url: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/reject.txt'
-    path: ./ruleset/reject.yaml
-    interval: 86400
-
-  icloud:
-    type: http
-    behavior: domain
-    url: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/icloud.txt'
-    path: ./ruleset/icloud.yaml
-    interval: 86400
-
-  apple:
-    type: http
-    behavior: domain
-    url: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/apple.txt'
-    path: ./ruleset/apple.yaml
-    interval: 86400
-
-  google:
-    type: http
-    behavior: domain
-    url: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/google.txt'
-    path: ./ruleset/google.yaml
-    interval: 86400
-
-  proxy:
-    type: http
-    behavior: domain
-    url: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/proxy.txt'
-    path: ./ruleset/proxy.yaml
-    interval: 86400
-
-  direct:
-    type: http
-    behavior: domain
-    url: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/direct.txt'
-    path: ./ruleset/direct.yaml
-    interval: 86400
-
-  private:
-    type: http
-    behavior: domain
-    url: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/private.txt'
-    path: ./ruleset/private.yaml
-    interval: 86400
-
-  gfw:
-    type: http
-    behavior: domain
-    url: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/gfw.txt'
-    path: ./ruleset/gfw.yaml
-    interval: 86400
-
-  tld-not-cn:
-    type: http
-    behavior: domain
-    url: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/tld-not-cn.txt'
-    path: ./ruleset/tld-not-cn.yaml
-    interval: 86400
-
-  telegramcidr:
-    type: http
-    behavior: ipcidr
-    url: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/telegramcidr.txt'
-    path: ./ruleset/telegramcidr.yaml
-    interval: 86400
-
-  cncidr:
-    type: http
-    behavior: ipcidr
-    url: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/cncidr.txt'
-    path: ./ruleset/cncidr.yaml
-    interval: 86400
-
-  lancidr:
-    type: http
-    behavior: ipcidr
-    url: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/lancidr.txt'
-    path: ./ruleset/lancidr.yaml
-    interval: 86400
-
-  applications:
-    type: http
-    behavior: classical
-    url: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/applications.txt'
-    path: ./ruleset/applications.yaml
-    interval: 86400
 
 rules:
-  - RULE-SET,applications,DIRECT
-  - DOMAIN,clash.razord.top,DIRECT
-  - DOMAIN,yacd.haishan.me,DIRECT
-  - RULE-SET,private,DIRECT
-  - RULE-SET,reject,REJECT
-  - RULE-SET,icloud,DIRECT
-  - RULE-SET,apple,DIRECT
-  - RULE-SET,google,DMIT
-  - RULE-SET,proxy,DMIT
-  - RULE-SET,direct,DIRECT
-  - RULE-SET,lancidr,DIRECT
-  - RULE-SET,cncidr,DIRECT
-  - RULE-SET,telegramcidr,DMIT
-  - GEOIP,LAN,DIRECT
-  - GEOIP,CN,DIRECT
-  - MATCH,DMIT
+  # ============================================
+  # V4-绕过大陆 (Whitelist) - 完全对齐 v2rayN
+  # 使用 Loyalsoldier 增强版 geosite/geoip
+  # ============================================
+
+  # 1. 广告拦截 (可选，如需关闭删除此行)
+  - GEOSITE,category-ads-all,REJECT
+
+  # 2. 私有域名 → 直连 (geosite:private)
+  - GEOSITE,private,DIRECT
+
+  # 4. iCloud 服务 → 直连
+  - GEOSITE,icloud,DIRECT
+
+  # 5. Apple 中国服务 → 直连 (Loyalsoldier 增强)
+  - GEOSITE,apple-cn,DIRECT
+
+  # 6. Google 中国服务 → 直连 (Loyalsoldier 增强)
+  - GEOSITE,google-cn,DIRECT
+
+  # 7. 游戏平台中国服务 → 直连 (Steam/EA/Blizzard 等)
+  - GEOSITE,category-games@cn,DIRECT
+
+  # 8. 中国顶级域名 → 直连
+  - GEOSITE,tld-cn,DIRECT
+
+  # 9. 中国域名 → 直连 (geosite:cn)
+  - GEOSITE,cn,DIRECT
+
+  # 10. 私有 IP → 直连 (geoip:private)
+  - GEOIP,private,DIRECT,no-resolve
+
+  # 11. 中国 IP → 直连 (geoip:cn)
+  - GEOIP,CN,DIRECT,no-resolve
+
+  # 12. 其余全部 → 代理
+  - MATCH,PROXY
