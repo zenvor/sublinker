@@ -8,7 +8,9 @@
  * @returns {string} - 规范化后的 IP 地址
  */
 function normalizeIp(ip) {
-  if (!ip) return ip;
+  if (!ip) {
+    return ip;
+  }
   
   // 去除 IPv4-mapped IPv6 前缀
   // 例如: ::ffff:192.168.1.1 -> 192.168.1.1

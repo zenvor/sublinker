@@ -12,7 +12,8 @@
     "dev": "nodemon src/app.js",
     "build": "echo 'JavaScript版本无需构建步骤'",
     "test": "echo '测试暂未实现'",
-    "clean": "rimraf coverage"
+    "clean": "rimraf coverage",
+    "lint": "eslint src/"
   },
   "keywords": [
     "clash",
@@ -36,6 +37,9 @@
     "qs": "^6.14.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.18.0",
+    "eslint": "^9.18.0",
+    "globals": "^15.14.0",
     "nodemon": "^3.1.11"
   }
 }
