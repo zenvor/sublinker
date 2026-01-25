@@ -46,6 +46,6 @@ jobs:
             git reset --hard origin/master
             cd packages/javascript-package
             npm ci --omit=dev
-            pm2 restart cloakgate
+            pm2 restart cloakgate || pm2 start src/app.js --name cloakgate
             sleep 3
             curl -f http://localhost:3000/health || exit 1
