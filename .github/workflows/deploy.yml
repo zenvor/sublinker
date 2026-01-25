@@ -40,11 +40,12 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT != '' && secrets.VPS_PORT || 22 }}
           script: |
-            cd /opt/cloakgate
+            export PATH=$PATH:/root/.nvm/versions/node/$(ls /root/.nvm/versions/node)/bin
+            cd /opt/CloakGate
             git fetch origin master
             git reset --hard origin/master
             cd packages/javascript-package
-            npm ci --production
+            npm ci --omit=dev
             pm2 restart cloakgate
             sleep 3
             curl -f http://localhost:3000/health || exit 1
