@@ -45,24 +45,3 @@ export async function verifyCredentials(username, password) {
   
   return await bcrypt.compare(password, user.password);
 }
-
-/**
- * 修改管理员密码
- * @param {string} username 用户名
- * @param {string} newPassword 新密码
- * @returns {Promise<boolean>} 是否修改成功
- */
-export async function changePassword(username, newPassword) {
-  try {
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(newPassword, salt);
-    
-    const result = db.prepare('UPDATE admins SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE username = ?')
-      .run(hashedPassword, username);
-      
-    return result.changes > 0;
-  } catch (error) {
-    console.error('修改密码失败:', error);
-    throw error;
-  }
-}
