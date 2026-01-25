@@ -70,16 +70,6 @@ export function getAllIpsForBlocking(token) {
 }
 
 /**
- * 获取指定 Token 的历史 IP 数量
- * @param {string} token - Token 字符串
- * @returns {number}
- */
-export function getIpHistoryCount(token) {
-  const result = db.prepare('SELECT COUNT(*) as count FROM ip_history WHERE token = ?').get(token)
-  return result?.count || 0
-}
-
-/**
  * 清除指定 Token 的所有 IP 历史（管理用）
  * @param {string} token - Token 字符串
  */

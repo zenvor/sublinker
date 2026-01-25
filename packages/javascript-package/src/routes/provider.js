@@ -3,9 +3,8 @@
 
 import Router from '@koa/router'
 import { getSubscription, isSubscriptionValid } from '../services/subscriptionService.js'
-import { updateAndCheck, getActiveIps, getActiveIpCount, cleanupInactiveIps } from '../services/ipTracker.js'
+import { updateAndCheck, getActiveIps, getActiveIpCount } from '../services/ipTracker.js'
 import { generateProxiesYaml, generateEmptyProxiesYaml } from '../services/yamlService.js'
-import { ipCleanupConfig } from '../config/appConfig.js'
 import { recordIpHistory } from '../services/ipHistoryService.js'
 
 const router = new Router()
@@ -17,7 +16,7 @@ const router = new Router()
  * IP 绑定策略:
  * 1. 通过 UA 和订阅校验后，直接进行 IP 绑定
  * 2. 槽位未满时自动绑定新 IP
- * 3. 槽位已满时拒绝新 IP，需等待自动清理或管理员手动清理
+ * 3. 槽位已满时拒绝新 IP，需管理员手动清理
  */
 router.get('/provider', async (ctx) => {
   const { token } = ctx.query
@@ -55,9 +54,6 @@ router.get('/provider', async (ctx) => {
 
   // 获取客户端真实 IP
   const clientIp = ctx.realIp || ctx.ip
-
-  // 清理不活跃的 IP（内置1小时频率限制，避免频繁执行）
-  cleanupInactiveIps(token, ipCleanupConfig.inactiveDays)
 
   // IP 绑定检查（使用订阅的 max_ips 配置）
   // updateAndCheck 内部会原子性地检查槽位并绑定IP，避免竞态条件
