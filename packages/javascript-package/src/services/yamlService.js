@@ -46,7 +46,7 @@ export function renderSubYaml(token) {
  * @param {string} nodeProfile - 节点配置标识
  * @returns {string} 节点列表 YAML
  */
-export function generateProxiesYaml(nodeProfile = 'default') {
+export function generateProxiesYaml(_nodeProfile = 'default') {
   // 第一版：硬编码测试节点（原始数据）
   // 后续可以根据 nodeProfile 从数据库或配置文件加载不同节点集
   const rawProxies = [
