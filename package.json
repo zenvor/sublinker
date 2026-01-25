@@ -15,8 +15,10 @@
     "build": "echo 'JavaScript版本无需构建，Rust版本使用cargo build'",
     "test": "npm run test --workspaces && cargo check",
     "clean": "npm run clean --workspaces && cargo clean -p rust-package",
-    "docker:build:js": "docker build -f packages/javascript-package/Dockerfile -t cloakgate:js packages/javascript-package",
-    "docker:build:rust": "docker build -f packages/rust-package/Dockerfile -t cloakgate:rust .",
+    "pm2:start": "pm2 start ecosystem.config.cjs",
+    "pm2:stop": "pm2 stop cloakgate",
+    "pm2:restart": "pm2 restart cloakgate",
+    "pm2:logs": "pm2 logs cloakgate",
     "install:all": "npm install && cargo fetch"
   },
   "keywords": [

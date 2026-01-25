@@ -4,7 +4,7 @@
   "description": "Clash 订阅分发服务 - JavaScript版本",
   "type": "module",
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=24.0.0"
   },
   "main": "src/app.js",
   "scripts": {

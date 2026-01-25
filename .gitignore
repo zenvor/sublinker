@@ -6,6 +6,7 @@ data/
 
 # 日志
 *.log
+logs/
 
 # OS
 .DS_Store
