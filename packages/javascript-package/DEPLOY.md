@@ -6,11 +6,31 @@
 
 - 一台 Linux VPS (Ubuntu/Debian/CentOS)
 - 本地可以通过 SSH 连接到 VPS
-- VPS 上安装了 Docker 和 Docker Compose
+- Node.js >= 24.0.0
+- PM2 进程管理器
 
 ## 部署步骤
 
-### 1. 本地准备
+### 1. 安装依赖环境
+
+#### 安装 Node.js 24
+
+```bash
+# 使用 NodeSource 安装 Node.js 24
+curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# 验证版本
+node -v  # 应显示 v24.x.x
+```
+
+#### 安装 PM2
+
+```bash
+sudo npm install -g pm2
+```
+
+### 2. 本地准备
 
 首先确保你已经完成了前端的构建（如果在另一个项目中），并将构建产物（`dist` 目录下的内容）复制到本项目的 `public` 目录下。
 
@@ -18,20 +38,18 @@
 # 示例：假设前端项目在 ../CloakGateWeb
 # 在 CloakGateWeb 下运行：
 # npm run build
-# cp -r dist/* ../CloakGate/public/
+# cp -r dist/* ../CloakGate/packages/javascript-package/src/public/
 ```
 
 确保 `public` 目录下有 `index.html` 和其他静态资源。
 
-### 2. 打包与上传
-
-你可以选择在本地构建镜像并推送，或者直接将代码上传到 VPS 在线构建。这里推荐**直接上传代码在线构建**，操作更简单。
+### 3. 上传代码到服务器
 
 将项目文件上传到 VPS（排除 `node_modules` 等）：
 
 ```bash
 # 使用 rsync 上传 (假设 VPS IP 为 1.2.3.4，用户为 root)
-rsync -avz --exclude 'node_modules' --exclude '.git' --exclude 'data' . root@1.2.3.4:/opt/cloakgate
+rsync -avz --exclude 'node_modules' --exclude '.git' --exclude 'data' --exclude 'logs' . root@1.2.3.4:/opt/cloakgate
 ```
 
 或者使用 SCP：
@@ -40,7 +58,7 @@ rsync -avz --exclude 'node_modules' --exclude '.git' --exclude 'data' . root@1.2
 scp -r . root@1.2.3.4:/opt/cloakgate
 ```
 
-### 3. 服务器配置与启动
+### 4. 服务器配置与启动
 
 SSH 登录到 VPS：
 
@@ -49,21 +67,21 @@ ssh root@1.2.3.4
 cd /opt/cloakgate
 ```
 
-首次运行前，确保 data 目录存在（Docker 会自动创建，但手动创建更保险）：
+#### 4.1 安装项目依赖
 
 ```bash
-mkdir -p data
+npm install
 ```
 
-使用 Docker Compose 启动服务：
+#### 4.2 创建必要目录
 
 ```bash
-docker compose up -d --build
+mkdir -p data logs
 ```
 
-### 3.1 环境变量配置
+#### 4.3 配置环境变量
 
-推荐复制 `.env.example` 为 `.env` 并修改配置，服务启动时会自动加载：
+复制 `.env.example` 为 `.env` 并修改配置：
 
 ```bash
 cp .env.example .env
@@ -71,55 +89,82 @@ nano .env
 # 编辑配置...
 ```
 
-或者继续使用 Docker 环境变量的方式。
+主要配置项：
+- `PORT`: 服务端口（默认 3000）
+- `API_DOMAIN`: API 域名
+- `XUI_*`: 3X-UI 面板配置
+- `IP_BLOCKER_*`: IP 阻断功能配置
 
-### 3.2 IP 阻断功能配置（可选）
-
-如需启用 IP 阻断功能，需要在 `docker-compose.yaml` 中添加以下环境变量：
-
-```yaml
-environment:
-  # X-UI 面板配置（使用内网 IP）
-  - XUI_HOST=127.0.0.1
-  - XUI_PORT=54321
-  - XUI_WEB_BASE_PATH=/your-web-base-path
-  - XUI_USERNAME=your-username
-  - XUI_PASSWORD=your-password
-  # IP 阻断配置
-  - IP_BLOCKER_ENABLED=true
-  - IP_BLOCKER_POLL_INTERVAL=30000
-  - IP_BLOCKER_LOG_COUNT=50
-  - IP_BLOCKER_JAIL_NAME=3x-ipl
-  - IP_BLOCKER_DRY_RUN=false
-```
-
-> **注意**: 由于需要调用 Fail2Ban，容器必须以特权模式运行或挂载宿主机的 Fail2Ban socket。推荐直接在宿主机上运行服务而非 Docker 容器。
-
-### 4. 验证部署
-
-查看容器状态：
+#### 4.4 使用 PM2 启动服务
 
 ```bash
-docker compose ps
+# 启动服务
+pm2 start ecosystem.config.cjs
+
+# 保存 PM2 进程列表（开机自启）
+pm2 save
+pm2 startup
+```
+
+### 5. 验证部署
+
+查看服务状态：
+
+```bash
+pm2 status
 ```
 
 查看日志：
 
 ```bash
-docker compose logs -f
+# 实时查看日志
+pm2 logs cloakgate
+
+# 或查看日志文件
+tail -f logs/cloakgate-out.log
+tail -f logs/cloakgate-error.log
 ```
 
 访问你的 VPS IP 或域名（默认端口 3000）：
 - 前端页面: `http://<VPS_IP>:3000`
 - 健康检查: `http://<VPS_IP>:3000/health`
 
-### 5. 常见维护命令
+### 6. 常用 PM2 命令
 
-- **停止服务**: `docker compose down`
-- **重启服务**: `docker compose restart`
-- **更新代码后重新部署**:
-  1. 重新上传代码
-  2. 运行 `docker compose up -d --build`
+```bash
+# 查看状态
+pm2 status
+
+# 查看日志
+pm2 logs cloakgate
+
+# 重启服务
+pm2 restart cloakgate
+
+# 停止服务
+pm2 stop cloakgate
+
+# 删除服务
+pm2 delete cloakgate
+
+# 监控面板
+pm2 monit
+```
+
+### 7. 更新部署
+
+```bash
+cd /opt/cloakgate
+
+# 拉取最新代码
+git pull
+
+# 如有新依赖，重新安装
+npm install
+
+# 重启服务
+pm2 restart cloakgate
+```
 
 > **Tip**: 如果在 VPS 上拉取代码 (git pull) 每次都要输入密码，可以配置凭证存储：
 > ```bash
@@ -134,7 +179,7 @@ docker compose logs -f
 
 ## 高级配置 (Nginx 反向代理)
 
-建议在 Docker 前面加一层 Nginx 做反向代理和 HTTPS，配置示例：
+建议在服务前面加一层 Nginx 做反向代理和 HTTPS，配置示例：
 
 ```nginx
 server {
@@ -152,7 +197,7 @@ server {
 }
 ```
 
-> **重要**: 必须配置 `X-Forwarded-For` 或 `X-Real-IP` 头，否则后端只能获取到 Docker 内网 IP。
+> **重要**: 必须配置 `X-Forwarded-For` 或 `X-Real-IP` 头，否则后端无法获取真实客户端 IP。
 
 ## 高级配置 (Caddy 反向代理)
 
@@ -165,3 +210,25 @@ your-domain.com {
 ```
 
 Caddy 默认会自动设置 `X-Forwarded-For`、`X-Real-IP` 等头，无需额外配置。
+
+## IP 阻断功能配置（可选）
+
+如需启用 IP 阻断功能，在 `.env` 文件中配置：
+
+```bash
+# X-UI 面板配置
+XUI_HOST=127.0.0.1
+XUI_PORT=54321
+XUI_WEB_BASE_PATH=/your-web-base-path
+XUI_USERNAME=your-username
+XUI_PASSWORD=your-password
+
+# IP 阻断配置
+IP_BLOCKER_ENABLED=true
+IP_BLOCKER_POLL_INTERVAL=30000
+IP_BLOCKER_LOG_COUNT=50
+IP_BLOCKER_JAIL_NAME=3x-ipl
+IP_BLOCKER_DRY_RUN=false
+```
+
+> **注意**: IP 阻断功能需要调用 Fail2Ban，请确保 Fail2Ban 已安装并配置好相应的 jail。使用 PM2 部署可以直接访问宿主机的 Fail2Ban。
