@@ -18,6 +18,7 @@ geo-auto-update: true
 geo-update-interval: 24
 
 # 自定义 GEO 下载地址 (Loyalsoldier 增强版)
+# 若 jsDelivr 不可用可改用: fastly.jsdelivr.net 或 raw.githubusercontent.com
 geox-url:
   geoip: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geoip.dat'
   geosite: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geosite.dat'
@@ -58,13 +59,10 @@ dns:
     'geosite:cn,private':
       - https://doh.pub/dns-query
       - https://dns.alidns.com/dns-query
-    # 开发者常用网站 → 国外 DNS (防止 DNS 污染)
-    'geosite:github':
-      - tls://1.1.1.1:853
+    # 被墙/非中国域名 + AI 服务 → 国外 DNS (含 github/docker 等，防污染)
+    'geosite:gfw,geolocation-!cn,google,anthropic,openai':
       - tls://8.8.8.8:853
-    'geosite:docker':
       - tls://1.1.1.1:853
-      - tls://8.8.8.8:853
 
 proxy-providers:
   main:
@@ -100,8 +98,6 @@ rules:
   # 特殊代理规则 - 对齐 v2rayN (需要代理才能稳定访问)
   - DOMAIN,www.icloud.com,PROXY
   - DOMAIN-SUFFIX,icloud-content.com,PROXY
-  - GEOSITE,google,PROXY
-
   # 私有域名 → 直连 (geosite:private)
   - GEOSITE,private,DIRECT
 
