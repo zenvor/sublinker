@@ -133,9 +133,9 @@ rules:
 
   # AI 服务专项优化 (ChatGPT, Claude, Gemini) - 显式代理并拦截 QUIC 确保稳定
   # 注意：拦截规则必须放在允许规则之前，否则会被 PROXY 规则抢先匹配
-  - AND,((PROTOCOL,UDP),(DEST-PORT,443),(GEOSITE,openai)),REJECT
-  - AND,((PROTOCOL,UDP),(DEST-PORT,443),(GEOSITE,anthropic)),REJECT
-  - AND,((PROTOCOL,UDP),(DEST-PORT,443),(GEOSITE,google)),REJECT
+  - AND,((NETWORK,UDP),(DST-PORT,443),(GEOSITE,openai)),REJECT
+  - AND,((NETWORK,UDP),(DST-PORT,443),(GEOSITE,anthropic)),REJECT
+  - AND,((NETWORK,UDP),(DST-PORT,443),(GEOSITE,google)),REJECT
 
   - GEOSITE,openai,PROXY
   - GEOSITE,anthropic,PROXY
