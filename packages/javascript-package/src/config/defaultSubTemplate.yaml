@@ -10,6 +10,39 @@ mode: rule
 log-level: info
 external-controller: 127.0.0.1:9090
 
+# 全局客户端指纹模拟 - 提高 ChatGPT/Cloudflare 兼容性
+global-client-fingerprint: chrome
+
+# 性能与稳定性优化
+tcp-concurrent: true
+unified-delay: true
+
+# 禁用 IPv6 以防止 macOS 下的流量泄漏
+ipv6: false
+
+# 核心 TUN 配置 - 确保在 macOS 下自动路由和接管 DNS
+tun:
+  enable: true
+  stack: mixed
+  auto-route: true
+  auto-detect-interface: true
+  dns-hijack:
+    - "any:53"
+    - "tcp://any:53"
+
+# 开启嗅探器以在 TUN 模式下辅助解析域名
+sniffer:
+  enable: true
+  sniff:
+    TLS:
+      ports: [443, 8443]
+    HTTP:
+      ports: [80, 8080-8880]
+      override-destination: true
+    QUIC:
+      ports: [443, 8443]
+
+
 # GEO 数据模式: true 使用 .dat 文件，false 使用 .mmdb 文件
 geodata-mode: true
 
@@ -27,7 +60,10 @@ geox-url:
 dns:
   enable: true
   listen: 0.0.0.0:53
+  ipv6: false
   enhanced-mode: fake-ip
+  cache-algorithm: arc
+  prefer-h3: false
   fake-ip-range: 198.18.0.1/16
   fake-ip-filter:
     - '*.lan'
@@ -94,6 +130,22 @@ rules:
 
   # 广告拦截 (可选，如需关闭删除此行)
   - GEOSITE,category-ads-all,REJECT
+
+  # AI 服务专项优化 (ChatGPT, Claude, Gemini) - 显式代理并拦截 QUIC 确保稳定
+  # 注意：拦截规则必须放在允许规则之前，否则会被 PROXY 规则抢先匹配
+  - AND,((PROTOCOL,UDP),(DEST-PORT,443),(GEOSITE,openai)),REJECT
+  - AND,((PROTOCOL,UDP),(DEST-PORT,443),(GEOSITE,anthropic)),REJECT
+  - AND,((PROTOCOL,UDP),(DEST-PORT,443),(GEOSITE,google)),REJECT
+
+  - GEOSITE,openai,PROXY
+  - GEOSITE,anthropic,PROXY
+  - GEOSITE,google,PROXY
+  - DOMAIN-KEYWORD,openai,PROXY
+  - DOMAIN-KEYWORD,anthropic,PROXY
+  - DOMAIN-KEYWORD,google,PROXY
+  - DOMAIN-SUFFIX,chatgpt.com,PROXY
+  - DOMAIN-SUFFIX,claude.ai,PROXY
+  - DOMAIN-SUFFIX,gemini.google.com,PROXY
 
   # 特殊代理规则 - 对齐 v2rayN (需要代理才能稳定访问)
   - DOMAIN,www.icloud.com,PROXY
