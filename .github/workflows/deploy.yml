@@ -83,13 +83,14 @@ jobs:
             tar -xzf /tmp/cloakgate-deploy.tgz -C "${{ env.deployPath }}"
             rm -f /tmp/cloakgate-deploy.tgz
 
-            if [ -s "$HOME/.nvm/nvm.sh" ]; then
-              # nvm 在 set -u 下会触发 unbound variable，临时关闭 nounset。
-              set +u
-              . "$HOME/.nvm/nvm.sh"
-              set -u
-              nvm use --lts >/dev/null || true
+            # 避免 source nvm.sh（在严格模式下可能触发 unbound variable）。
+            if ! command -v node >/dev/null 2>&1; then
+              latest_node_dir="$(ls -1d "$HOME/.nvm/versions/node/"*/ 2>/dev/null | sort -V | tail -n 1 || true)"
+              if [ -n "${latest_node_dir:-}" ]; then
+                export PATH="$latest_node_dir/bin:$PATH"
+              fi
             fi
+            command -v node >/dev/null 2>&1 || { echo "node not found on server"; exit 1; }
 
             cd "${{ env.deployPath }}/packages/javascript-package"
             npm ci --omit=dev
