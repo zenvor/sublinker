@@ -55,6 +55,13 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H -p "${{ secrets.VPS_PORT || 22 }}" "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
 
+      - name: Install rsync
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y rsync
+
       - name: Sync project files to server
         shell: bash
         run: |
