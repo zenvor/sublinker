@@ -84,7 +84,10 @@ jobs:
             rm -f /tmp/cloakgate-deploy.tgz
 
             if [ -s "$HOME/.nvm/nvm.sh" ]; then
+              # nvm 在 set -u 下会触发 unbound variable，临时关闭 nounset。
+              set +u
               . "$HOME/.nvm/nvm.sh"
+              set -u
               nvm use --lts >/dev/null || true
             fi
 
