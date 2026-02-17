@@ -50,7 +50,8 @@ router.get('/sub', async (ctx) => {
   console.log(`[Sub] 返回订阅: token=${token.slice(0, 8)}... ua=${userAgent.slice(0, 30)}`)
 
   try {
-    const yaml = renderSubYaml(token)
+    const apiDomain = resolveApiDomain(ctx)
+    const yaml = renderSubYaml(token, apiDomain)
     ctx.set('Content-Disposition', 'attachment; filename=DMIT')
     ctx.type = 'application/x-yaml; charset=utf-8'
     ctx.body = yaml
@@ -59,5 +60,30 @@ router.get('/sub', async (ctx) => {
     ctx.fail(500, '服务内部错误')
   }
 })
+
+/**
+ * 根据当前请求解析 API 域名
+ * 优先使用反向代理透传头，避免服务换 IP 后订阅中的 provider 地址失效
+ * @param {import('koa').Context} ctx
+ * @returns {string}
+ */
+function resolveApiDomain(ctx) {
+  const forwardedProto = ctx.headers['x-forwarded-proto']
+  const forwardedHost = ctx.headers['x-forwarded-host']
+  const hostHeader = forwardedHost || ctx.headers.host || ''
+
+  const protocol = String(forwardedProto || ctx.protocol || 'http')
+    .split(',')[0]
+    .trim()
+  const host = String(hostHeader)
+    .split(',')[0]
+    .trim()
+
+  if (!host) {
+    return ''
+  }
+
+  return `${protocol}://${host}`
+}
 
 export default router

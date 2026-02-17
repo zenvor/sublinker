@@ -64,6 +64,34 @@ db.exec(`
   );
 
   CREATE INDEX IF NOT EXISTS idx_ip_history_token ON ip_history(token);
+
+  CREATE TABLE IF NOT EXISTS subscription_nodes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    token TEXT NOT NULL,
+    raw_link TEXT NOT NULL,
+    node_name TEXT NOT NULL,
+    protocol TEXT NOT NULL,
+    server TEXT NOT NULL,
+    port INTEGER NOT NULL,
+    uuid TEXT NOT NULL,
+    transport_type TEXT,
+    security TEXT,
+    host TEXT,
+    path TEXT,
+    sni TEXT,
+    fingerprint TEXT,
+    public_key TEXT,
+    short_id TEXT,
+    spider_x TEXT,
+    flow TEXT,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(token, raw_link)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_subscription_nodes_token ON subscription_nodes(token);
+  CREATE INDEX IF NOT EXISTS idx_subscription_nodes_token_sort ON subscription_nodes(token, sort_order);
 `)
 
 // 数据库迁移：确保 subscriptions 表包含 max_ips 列
@@ -103,6 +131,23 @@ try {
   db.exec('CREATE INDEX IF NOT EXISTS idx_ip_bindings_last_seen ON ip_bindings(last_seen_at)')
 } catch (error) {
   console.error('创建 last_seen_at 索引失败:', error.message)
+}
+
+// 数据库迁移：确保 subscription_nodes 表包含 host/path 列
+try {
+  const subscriptionNodesInfo = db.prepare('PRAGMA table_info(subscription_nodes)').all()
+  const hasHostColumn = subscriptionNodesInfo.some((col) => col.name === 'host')
+  const hasPathColumn = subscriptionNodesInfo.some((col) => col.name === 'path')
+
+  if (!hasHostColumn) {
+    db.exec('ALTER TABLE subscription_nodes ADD COLUMN host TEXT')
+  }
+
+  if (!hasPathColumn) {
+    db.exec('ALTER TABLE subscription_nodes ADD COLUMN path TEXT')
+  }
+} catch (error) {
+  console.error('subscription_nodes 表迁移失败:', error.message)
 }
 
 console.log('数据库初始化完成:', dbPath)
