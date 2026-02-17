@@ -6,6 +6,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import yaml from 'js-yaml'
 import { API_DOMAIN } from '../config/appConfig.js'
+import { listNodesByToken } from './subscriptionNodeService.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -31,144 +32,104 @@ export function loadSubTemplate() {
  * 渲染一级订阅 YAML
  * 替换 __TOKEN__ 占位符为真实 token
  * @param {string} token - 用户 token
+ * @param {string} [apiDomain] - 可选的 API 域名（优先级高于环境变量）
  * @returns {string} 渲染后的 YAML
  */
-export function renderSubYaml(token) {
+export function renderSubYaml(token, apiDomain = '') {
   const template = loadSubTemplate()
-  return template
-    .replace(/__TOKEN__/g, token)
-    .replace(/__API_DOMAIN__/g, API_DOMAIN)
+  const finalApiDomain = apiDomain || API_DOMAIN
+  return template.replace(/__TOKEN__/g, token).replace(/__API_DOMAIN__/g, finalApiDomain)
 }
 
 /**
  * 生成节点列表 YAML
- * 目前返回固定的测试节点，后续根据 nodeProfile 返回不同节点集
- * @param {string} nodeProfile - 节点配置标识
+ * @param {string} token - 订阅 token
  * @returns {string} 节点列表 YAML
  */
-export function generateProxiesYaml(_nodeProfile = 'default') {
-  // 第一版：硬编码测试节点（原始数据）
-  // 后续可以根据 nodeProfile 从数据库或配置文件加载不同节点集
-  const rawProxies = [
-    {
-      name: '🇺🇸 United States | 01',
-      server: 'lucky.starying.top',
-      port: 55567,
-      type: 'vless',
-      tls: true,
-      uuid: '5e4ed592-9a3f-41c9-9dde-b756f3e97d37',
-      servername: 'amd.com',
-      host: 'amd.com',
-      path: '/',
-      flow: 'xtls-rprx-vision',
-      realityOpts: {
-        publicKey: 'AqNagjlSjv7H6BCwczyK34HmJKKIE4oGugIB7DzJ7DQ',
-        shortId: 'e0577732',
-      },
-      clientFingerprint: 'random',
-    },
-    {
-      name: '🇺🇸 United States | 02',
-      server: 'lucky.starying.top',
-      port: 32841,
-      type: 'vless',
-      tls: true,
-      uuid: '886060aa-ff99-4ff9-907f-22bbf8c16779',
-      servername: 'amd.com',
-      host: 'amd.com',
-      path: '/',
-      realityOpts: {
-        publicKey: 'LjbQL4iXMdyPQj2Eiw8ReNoHyLpAS0t2ClTzhk-O-XE',
-        shortId: 'ff',
-      },
-      clientFingerprint: 'random',
-    },
-    {
-      name: '🇺🇸 United States | 03',
-      server: 'lucky.starying.top',
-      port: 50213,
-      type: 'vless',
-      tls: true,
-      uuid: 'a39c48cd-04a3-4c3a-a8f8-ac46aadafad2',
-      servername: 'amd.com',
-      host: 'amd.com',
-      path: '/',
-      realityOpts: {
-        publicKey: 'deIpidvyTWJnlaBfZPQiC2CILf_2XAQAh5HU63T7_kc',
-        shortId: 'd2bfb3b611bbaf',
-      },
-      clientFingerprint: 'random',
-    },
-    {
-      name: '🇺🇸 United States | 04',
-      server: 'lucky.starying.top',
-      port: 39922,
-      type: 'vless',
-      tls: true,
-      uuid: '4b360382-98af-4b41-8b88-e35d4e98830d',
-      servername: 'amd.com',
-      host: 'amd.com',
-      path: '/',
-      realityOpts: {
-        publicKey: 'Wb4RdU4rIW8OCXS705wSLhEVNes1PJ606N2yDEf3WWk',
-        shortId: '23e047839decdb',
-      },
-      clientFingerprint: 'random',
-    },
-    {
-      name: '🇺🇸 United States | 05',
-      server: 'lucky.starying.top',
-      port: 53164,
-      type: 'vless',
-      tls: true,
-      uuid: '49600216-6a16-4685-bdc3-a1f3b3050b25',
-      servername: 'amd.com',
-      host: 'amd.com',
-      path: '/',
-      realityOpts: {
-        publicKey: '_uvc-WXtfkrFiXnqA1YhUS6K7mWL9s55OddOQQClflM',
-        shortId: '77',
-      },
-      clientFingerprint: 'random',
-    },
-  ]
+export function generateProxiesYaml(token) {
+  const rows = listNodesByToken(token)
 
-  // 转换为 Clash.Meta 兼容的格式
-  const clashProxies = rawProxies.map((p) => {
-    const item = {
-      name: p.name,
-      type: 'vless',
-      server: p.server,
-      port: p.port,
-      uuid: p.uuid,
-      tls: true,
-      servername: p.servername || p.host,
-      'client-fingerprint': p.clientFingerprint || 'random',
+  if (!rows.length) {
+    return generateEmptyProxiesYaml()
+  }
+
+  const clashProxies = rows.map((row, index) => buildClashProxy(row, index))
+
+  return yaml.dump(
+    { proxies: clashProxies },
+    {
+      indent: 2,
+      lineWidth: -1,
+      quotingType: '"',
+      forceQuotes: false,
+    },
+  )
+}
+
+function buildClashProxy(node, index) {
+  const security = (node.security || '').trim()
+  const network = (node.transport_type || 'tcp').trim()
+  const tls = resolveTlsBySecurity(security, node, index)
+
+  const proxy = {
+    name: node.node_name || `节点 ${index + 1}`,
+    type: 'vless',
+    server: node.server,
+    port: node.port,
+    uuid: node.uuid,
+    tls,
+    servername: node.sni || node.server,
+    'client-fingerprint': node.fingerprint || 'random',
+  }
+
+  if (network && network !== 'tcp') {
+    proxy.network = network
+  }
+
+  if (network === 'ws') {
+    proxy['ws-opts'] = {
+      path: node.path || '/',
     }
 
-    // 添加 flow（如果存在）
-    if (p.flow) {
-      item.flow = p.flow
+    if (node.host) {
+      proxy['ws-opts'].headers = { Host: node.host }
+    }
+  } else if (network !== 'tcp') {
+    throw new Error(`第 ${index + 1} 个节点暂不支持 network=${network}`)
+  }
+
+  if (node.flow) {
+    proxy.flow = node.flow
+  }
+
+  if (security === 'reality') {
+    proxy['reality-opts'] = {}
+
+    if (node.public_key) {
+      proxy['reality-opts']['public-key'] = node.public_key
     }
 
-    // 添加 reality-opts（使用 Clash 要求的 dash-case 字段名）
-    if (p.realityOpts) {
-      item['reality-opts'] = {
-        'public-key': p.realityOpts.publicKey,
-        'short-id': p.realityOpts.shortId,
-      }
+    if (node.short_id) {
+      proxy['reality-opts']['short-id'] = node.short_id
     }
+  }
 
-    return item
-  })
+  return proxy
+}
 
-  // 使用 js-yaml 生成正确的 YAML 格式
-  return yaml.dump({ proxies: clashProxies }, { 
-    indent: 2,
-    lineWidth: -1, // 不换行
-    quotingType: '"',
-    forceQuotes: false
-  })
+function resolveTlsBySecurity(security, node, index) {
+  if (security === 'none') {
+    return false
+  }
+
+  if (security === 'tls' || security === 'reality') {
+    if (security === 'reality' && !node.public_key) {
+      throw new Error(`第 ${index + 1} 个节点缺少 reality public-key`)
+    }
+    return true
+  }
+
+  throw new Error(`第 ${index + 1} 个节点暂不支持 security=${security || '空值'}`)
 }
 
 /**
@@ -178,4 +139,3 @@ export function generateProxiesYaml(_nodeProfile = 'default') {
 export function generateEmptyProxiesYaml() {
   return 'proxies: []'
 }
-

@@ -13,6 +13,15 @@ import {
 import { getActiveIps, clearTokenIps, removeTokenIp } from '../services/ipTracker.js'
 import { getIpHistory, getAllIpsForBlocking, clearIpHistory } from '../services/ipHistoryService.js'
 import { authMiddleware } from '../middlewares/authMiddleware.js'
+import { parseVlessNodeLinks } from '../services/vlessParserService.js'
+import {
+  replaceNodesByToken,
+  replaceNodesByTokenInSameTransaction,
+  getNodeLinksTextByToken,
+  getNodeCountsByTokens,
+  deleteNodesByToken,
+} from '../services/subscriptionNodeService.js'
+import db from '../db/index.js'
 
 const router = new Router({ prefix: '/admin' })
 
@@ -24,10 +33,15 @@ router.use(authMiddleware())
  * 创建新订阅
  */
 router.post('/subscription', async (ctx) => {
-  const { remark, maxIps = 1, expiredAt = null } = ctx.request.body || {}
+  const { remark, maxIps = 1, expiredAt = null, nodeLinksText = '' } = ctx.request.body || {}
 
   if (!remark) {
     ctx.fail(400, '备注不能为空')
+    return
+  }
+
+  if (!nodeLinksText || typeof nodeLinksText !== 'string' || !nodeLinksText.trim()) {
+    ctx.fail(400, '节点链接不能为空')
     return
   }
 
@@ -36,9 +50,26 @@ router.post('/subscription', async (ctx) => {
     return
   }
 
-  const subscription = createSubscription({ remark, maxIps, expiredAt })
+  let parsedNodes
+  try {
+    parsedNodes = parseVlessNodeLinks(nodeLinksText)
+  } catch (error) {
+    ctx.fail(400, error.message || '节点解析失败')
+    return
+  }
 
-  ctx.success(subscription, '订阅创建成功', 201)
+  try {
+    const createSubscriptionWithNodes = db.transaction((payload, nodes) => {
+      const createdSubscription = createSubscription(payload)
+      replaceNodesByTokenInSameTransaction(createdSubscription.token, nodes)
+      return createdSubscription
+    })
+
+    const subscription = createSubscriptionWithNodes({ remark, maxIps, expiredAt }, parsedNodes)
+    ctx.success(subscription, '订阅创建成功', 201)
+  } catch (error) {
+    ctx.fail(400, error.message || '节点保存失败')
+  }
 })
 
 /**
@@ -49,11 +80,14 @@ router.get('/subscription', async (ctx) => {
   const { limit = 50, offset = 0 } = ctx.query
   const subscriptions = listSubscriptions(parseInt(limit), parseInt(offset))
   const total = getSubscriptionCount()
+  const tokens = subscriptions.map((item) => item.token)
+  const nodeCountMap = getNodeCountsByTokens(tokens)
 
   // 为每个订阅添加活跃 IP 数量
   const rows = subscriptions.map((sub) => ({
     ...sub,
     activeIpCount: getActiveIps(sub.token).length,
+    nodeCount: nodeCountMap[sub.token] || 0,
   }))
 
   ctx.success({
@@ -75,8 +109,10 @@ router.get('/subscription/:token', async (ctx) => {
     return
   }
 
-  // 添加活跃 IP 数量
+  // 添加活跃 IP 数量与节点信息
   subscription.activeIpCount = getActiveIps(token).length
+  subscription.nodeLinksText = getNodeLinksTextByToken(token)
+  subscription.nodeCount = getNodeCountsByTokens([token])[token] || 0
 
   ctx.success(subscription)
 })
@@ -87,7 +123,13 @@ router.get('/subscription/:token', async (ctx) => {
  */
 router.put('/subscription/:token', async (ctx) => {
   const { token } = ctx.params
-  const { remark, maxIps, status, expiredAt } = ctx.request.body || {}
+  const { remark, maxIps, status, expiredAt, nodeLinksText } = ctx.request.body || {}
+
+  const subscription = getSubscription(token)
+  if (!subscription) {
+    ctx.fail(404, '订阅不存在')
+    return
+  }
 
   // 验证状态值
   if (status !== undefined && !['active', 'banned'].includes(status)) {
@@ -101,11 +143,52 @@ router.put('/subscription/:token', async (ctx) => {
     return
   }
 
-  const updated = updateSubscription(token, { remark, maxIps, status, expiredAt })
+  let parsedNodes = null
+  if (nodeLinksText !== undefined) {
+    if (typeof nodeLinksText !== 'string' || !nodeLinksText.trim()) {
+      ctx.fail(400, '节点链接不能为空')
+      return
+    }
 
-  if (!updated) {
-    ctx.fail(404, '订阅不存在')
+    try {
+      parsedNodes = parseVlessNodeLinks(nodeLinksText)
+    } catch (error) {
+      ctx.fail(400, error.message || '节点解析失败')
+      return
+    }
+  }
+
+  const hasSubscriptionUpdates = [remark, maxIps, status, expiredAt].some((item) => item !== undefined)
+
+  if (!hasSubscriptionUpdates && parsedNodes === null) {
+    ctx.fail(400, '未提供可更新字段')
     return
+  }
+
+  if (hasSubscriptionUpdates) {
+    try {
+      const updateSubscriptionWithNodes = db.transaction((targetToken, updates, nodes, shouldUpdate) => {
+        if (shouldUpdate) {
+          updateSubscription(targetToken, updates)
+        }
+
+        if (nodes !== null) {
+          replaceNodesByTokenInSameTransaction(targetToken, nodes)
+        }
+      })
+
+      updateSubscriptionWithNodes(token, { remark, maxIps, status, expiredAt }, parsedNodes, hasSubscriptionUpdates)
+    } catch (error) {
+      ctx.fail(400, error.message || '节点保存失败')
+      return
+    }
+  } else if (parsedNodes !== null) {
+    try {
+      replaceNodesByToken(token, parsedNodes)
+    } catch (error) {
+      ctx.fail(400, error.message || '节点保存失败')
+      return
+    }
   }
 
   ctx.success(null, '订阅更新成功')
@@ -126,6 +209,7 @@ router.delete('/subscription/:token', async (ctx) => {
 
   // 同时清除该订阅的活跃 IP 记录
   clearTokenIps(token)
+  deleteNodesByToken(token)
 
   ctx.status = 204
   ctx.body = null

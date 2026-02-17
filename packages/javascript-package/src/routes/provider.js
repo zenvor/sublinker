@@ -92,8 +92,8 @@ router.get('/provider', async (ctx) => {
   console.log(`[Provider] 允许访问: token=${token.slice(0, 8)}... ip=${clientIp}`)
 
   try {
-    // 使用默认节点配置（已移除 node_profile 字段）
-    const yaml = generateProxiesYaml('default')
+    // 使用订阅绑定的动态节点配置
+    const yaml = generateProxiesYaml(token)
     ctx.type = 'application/x-yaml; charset=utf-8'
     ctx.body = yaml
   } catch (err) {
