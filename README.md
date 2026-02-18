@@ -8,14 +8,14 @@
   <img src="https://img.shields.io/badge/License-ISC-blue" alt="License">
 </p>
 
-Clash 订阅分发服务，支持 **Token 验证** 和 **滑动窗口 IP 并发控制**。通过限制同一 Token 在时间窗口内的活跃 IP 数量，有效防止订阅链接被多人共享滥用。
+Clash 订阅分发服务，支持 **Token 验证** 和 **IP 绑定并发控制**。通过限制同一订阅可绑定的 IP 数量，有效防止订阅链接被多人共享滥用。
 
 ## 功能特性
 
-- **Token 验证** - 支持 Token 的创建、禁用、过期时间管理
-- **IP 并发控制** - 滑动窗口机制统计活跃 IP，超限自动返回空节点
+- **订阅管理** - 支持订阅创建、禁用、过期时间和节点管理
+- **IP 并发控制** - 超限自动返回空节点列表
 - **一级订阅 + Provider** - 兼容 Clash `proxy-providers` 机制
-- **Admin API** - RESTful 接口管理 Token 和查看活跃 IP
+- **Admin API** - RESTful 接口管理订阅和查看活跃 IP
 - **请求日志** - 记录时间、路径、Token、IP、UA、状态码
 - **Docker 部署** - 开箱即用的容器化部署方案
 - **防 QQ 预览** - User-Agent 检测机制，防止订阅链接被自动预览消费
@@ -46,10 +46,10 @@ sequenceDiagram
     loop 每 10 分钟 (interval)
         C->>G: GET /provider?token=xxx
         G->>IP: 检查活跃 IP 数量
-        alt IP 数量 ≤ 2
+        alt IP 数量未超限
             IP-->>G: 允许
             G-->>C: 节点列表 YAML
-        else IP 数量 > 2
+        else IP 数量超限
             IP-->>G: 超限
             G-->>C: proxies: []
         end
@@ -76,9 +76,6 @@ npm install
 
 # 启动开发服务器
 npm run dev
-
-# 创建测试 Token
-node scripts/create-token.js
 ```
 
 ## API 接口
@@ -93,14 +90,19 @@ node scripts/create-token.js
 
 ### 管理接口
 
-| 端点                             | 方法   | 说明             |
-| -------------------------------- | ------ | ---------------- |
-| `/admin/token`                   | GET    | 列出所有 Token   |
-| `/admin/token`                   | POST   | 创建新 Token     |
-| `/admin/token/:token`            | GET    | 获取 Token 详情  |
-| `/admin/token/:token`            | PATCH  | 更新 Token 状态  |
-| `/admin/token/:token`            | DELETE | 删除 Token       |
-| `/admin/token/:token/active-ips` | GET    | 查看活跃 IP 列表 |
+| 端点                                      | 方法   | 说明                      |
+| ----------------------------------------- | ------ | ------------------------- |
+| `/admin/auth/login`                       | POST   | 管理员登录                |
+| `/admin/auth/info`                        | GET    | 获取当前登录信息          |
+| `/admin/subscription`                     | GET    | 列出订阅                  |
+| `/admin/subscription`                     | POST   | 创建订阅                  |
+| `/admin/subscription/:token`              | GET    | 获取订阅详情              |
+| `/admin/subscription/:token`              | PUT    | 更新订阅                  |
+| `/admin/subscription/:token`              | DELETE | 删除订阅                  |
+| `/admin/subscription/:token/active-ips`   | GET    | 查看当前绑定 IP           |
+| `/admin/subscription/:token/active-ips`   | DELETE | 解绑全部 IP 或解绑单个 IP |
+| `/admin/subscription/:token/ip-history`   | GET    | 查看 IP 历史              |
+| `/admin/subscription/:token/ip-history`   | DELETE | 清空 IP 历史              |
 
 ### 示例
 
@@ -113,63 +115,59 @@ curl -H "User-Agent: clash" "http://localhost:3000/sub?token=YOUR_TOKEN"
 # 或
 curl -H "User-Agent: Shadowrocket/2850" "http://localhost:3000/sub?token=YOUR_TOKEN"
 
-# 查看 Token 列表
-curl http://localhost:3000/admin/token
-
-# 创建 Token
-curl -X POST http://localhost:3000/admin/token \
+# 管理员登录
+curl -X POST http://localhost:3000/admin/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"remark": "用户A", "nodeProfile": "default"}'
+  -d '{"username": "admin", "password": "your-password"}'
+
+# 创建订阅
+curl -X POST http://localhost:3000/admin/subscription \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{"remark":"用户A","nodeLinksText":"vless://...","maxIps":2}'
 
 # 查看活跃 IP
-curl http://localhost:3000/admin/token/YOUR_TOKEN/active-ips
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+  http://localhost:3000/admin/subscription/SUBSCRIPTION_TOKEN/active-ips
 ```
 
 ## 配置说明
 
-编辑 `src/config/appConfig.js` 调整以下参数：
+主要通过环境变量配置：
 
 ```javascript
-// 服务端口
-export const PORT = process.env.PORT || 3000
-
-// 滑动窗口时间（毫秒）
-export const WINDOW_MS = 30 * 60 * 1000 // 30 分钟
-
-// 每个 Token 最大活跃 IP 数
-export const MAX_IP_PER_TOKEN = 2
-
 // API 域名（用于订阅模板）
 export const API_DOMAIN = process.env.API_DOMAIN || 'https://api.example.com'
 ```
 
 编辑 `src/config/defaultSubTemplate.yaml` 自定义订阅规则。
 
-编辑 `src/services/yamlService.js` 中的 `generateProxiesYaml()` 配置真实节点。
-
 ## 反向代理配置
 
-### Caddy
+### Caddy（随机路径 + 前后端分离）
 
-```
-api.example.com {
-    reverse_proxy localhost:3000
-}
-```
+```caddy
+panel.example.com {
+    encode gzip zstd
 
-### Nginx
+    # 管理 API：/mEoDlubA1d4mISPXpQ/api/* -> 后端 /
+    handle_path /mEoDlubA1d4mISPXpQ/api/* {
+        reverse_proxy 127.0.0.1:3000
+    }
 
-```nginx
-server {
-    listen 443 ssl http2;
-    server_name api.example.com;
+    # 订阅接口可选同域转发（按需开启）
+    handle /sub* {
+        reverse_proxy 127.0.0.1:3000
+    }
+    handle /provider* {
+        reverse_proxy 127.0.0.1:3000
+    }
 
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+    # 前端静态资源与 SPA 回退（strip 随机前缀）
+    handle_path /mEoDlubA1d4mISPXpQ/* {
+        root * /var/www/cloakGateWeb
+        try_files {path} /index.html
+        file_server
     }
 }
 ```

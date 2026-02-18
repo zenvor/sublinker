@@ -52,24 +52,6 @@ export function getIpHistory(token) {
 }
 
 /**
- * 获取指定 Token 用于封禁的所有 IP（合并 ip_bindings 和 ip_history）
- * @param {string} token - Token 字符串
- * @returns {Array<string>} 去重后的 IP 列表
- */
-export function getAllIpsForBlocking(token) {
-  // 从 ip_bindings 获取当前绑定的 IP
-  const boundRows = db.prepare('SELECT ip FROM ip_bindings WHERE token = ?').all(token)
-  const boundIps = boundRows.map((row) => row.ip)
-
-  // 从 ip_history 获取历史 IP
-  const historyRows = db.prepare('SELECT ip FROM ip_history WHERE token = ?').all(token)
-  const historyIps = historyRows.map((row) => row.ip)
-
-  // 合并并去重
-  return [...new Set([...boundIps, ...historyIps])]
-}
-
-/**
  * 清除指定 Token 的所有 IP 历史（管理用）
  * @param {string} token - Token 字符串
  */

@@ -62,12 +62,4 @@ router.get('/info', authMiddleware(), async (ctx) => {
   });
 });
 
-/**
- * POST /admin/auth/logout
- * 登出（客户端删除 token 即可，服务端仅返回成功）
- */
-router.post('/logout', async (ctx) => {
-  ctx.success(null, '登出成功');
-});
-
 export default router;

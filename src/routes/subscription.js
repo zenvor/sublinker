@@ -11,7 +11,7 @@ import {
   getSubscriptionCount,
 } from '../services/subscriptionService.js'
 import { getActiveIps, clearTokenIps, removeTokenIp } from '../services/ipTracker.js'
-import { getIpHistory, getAllIpsForBlocking, clearIpHistory } from '../services/ipHistoryService.js'
+import { getIpHistory, clearIpHistory } from '../services/ipHistoryService.js'
 import { authMiddleware } from '../middlewares/authMiddleware.js'
 import { parseVlessNodeLinks } from '../services/vlessParserService.js'
 import {
@@ -311,29 +311,6 @@ router.get('/subscription/:token/ip-history', async (ctx) => {
       lastSeenAt: item.lastSeenAt,
       accessCount: item.accessCount,
     })),
-  })
-})
-
-/**
- * GET /admin/subscription/:token/all-ips
- * 获取用于封禁的所有 IP（合并绑定IP和历史IP）
- */
-router.get('/subscription/:token/all-ips', async (ctx) => {
-  const { token } = ctx.params
-
-  // 检查订阅是否存在
-  const subscription = getSubscription(token)
-  if (!subscription) {
-    ctx.fail(404, '订阅不存在')
-    return
-  }
-
-  const allIps = getAllIpsForBlocking(token)
-
-  ctx.success({
-    token: token.slice(0, 8) + '...',
-    count: allIps.length,
-    ips: allIps,
   })
 })
 
