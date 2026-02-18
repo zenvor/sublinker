@@ -15,9 +15,6 @@ dotenv.config({ path: path.join(__dirname, '../../.env'), quiet: true })
 // 服务端口
 export const PORT = process.env.PORT || 3000
 
-// API 域名（用于生成订阅中的 provider URL）
-export const API_DOMAIN = process.env.API_DOMAIN || 'https://api.starying.top'
-
 // 可信代理列表（逗号分隔的 IP/CIDR，仅这些直连 IP 才信任 X-Forwarded-For）
 export const TRUSTED_PROXIES = (process.env.TRUSTED_PROXIES || '127.0.0.1,::1')
   .split(',')

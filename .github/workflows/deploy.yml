@@ -11,9 +11,9 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  deployPath: /opt/sublinker
   appName: sublinker
   servicePort: 3000
+  deployPath: /opt/sublinker
 
 jobs:
   lint:
@@ -35,11 +35,66 @@ jobs:
       - name: Run ESLint
         run: npm run lint
 
-  deploy:
-    name: Pull and restart service
+  package:
+    name: Build release artifact
     runs-on: ubuntu-latest
     needs: lint
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Create release archive
+        run: |
+          set -euo pipefail
+          tar \
+            --exclude=".git" \
+            --exclude="node_modules" \
+            --exclude="data" \
+            --exclude="logs" \
+            --exclude=".env" \
+            -czf release.tar.gz .
+
+      - name: Upload release archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-archive
+          path: release.tar.gz
+          if-no-files-found: error
+
+  deploy:
+    name: Deploy release to project root
+    runs-on: ubuntu-latest
+    needs: package
+    steps:
+      - name: Download release archive
+        uses: actions/download-artifact@v4
+        with:
+          name: release-archive
+          path: .
+
+      - name: Upload release archive to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          source: release.tar.gz
+          target: /tmp/sublinker-${{ github.sha }}
+          overwrite: true
+
       - name: Deploy on server through SSH
         uses: appleboy/ssh-action@v1
         with:
@@ -49,16 +104,21 @@ jobs:
           port: ${{ secrets.VPS_PORT || 22 }}
           script: |
             set -euo pipefail
+            deploy_path="${{ env.deployPath }}"
+            archive_dir="/tmp/sublinker-${{ github.sha }}"
+            archive_file="$archive_dir/release.tar.gz"
+            unpack_dir="$archive_dir/unpacked"
+            mkdir -p "$deploy_path/data" "$deploy_path/logs"
 
-            if [ ! -d "${{ env.deployPath }}/.git" ]; then
-              echo "deployPath 不是 git 仓库: ${{ env.deployPath }}"
+            if [ ! -f "$archive_file" ]; then
+              echo "发布包不存在: $archive_file"
               exit 1
             fi
 
-            cd "${{ env.deployPath }}"
-            git fetch origin "${{ github.ref_name }}"
-            git checkout "${{ github.ref_name }}"
-            git pull --ff-only origin "${{ github.ref_name }}"
+            if [ ! -f "$deploy_path/.env" ]; then
+              echo "缺少环境变量文件: $deploy_path/.env"
+              exit 1
+            fi
 
             # 尝试加载 nvm，以保证 node/npm/pm2 在非交互 shell 中可用。
             export NVM_DIR="$HOME/.nvm"
@@ -76,9 +136,23 @@ jobs:
             command -v npm >/dev/null 2>&1 || { echo "npm not found on server"; exit 1; }
             command -v pm2 >/dev/null 2>&1 || { echo "pm2 not found on server"; exit 1; }
 
+            rm -rf "$unpack_dir"
+            mkdir -p "$unpack_dir"
+            tar -xzf "$archive_file" -C "$unpack_dir"
+
+            find "$deploy_path" -mindepth 1 -maxdepth 1 \
+              ! -name "data" \
+              ! -name "logs" \
+              ! -name ".env" \
+              -exec rm -rf {} +
+
+            cp -a "$unpack_dir"/. "$deploy_path"/
+            rm -rf "$archive_dir"
+
+            cd "$deploy_path"
             npm ci --omit=dev
 
-            pm2 describe "${{ env.appName }}" >/dev/null 2>&1 && npm run pm2:restart || npm run pm2:start
+            pm2 startOrReload ecosystem.config.cjs --update-env
             sleep 3
             curl -fsS "http://localhost:${{ env.servicePort }}/health"
             pm2 save

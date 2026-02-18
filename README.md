@@ -136,8 +136,11 @@ curl -H "Authorization: Bearer YOUR_TOKEN" \
 主要通过环境变量配置：
 
 ```javascript
-// API 域名（用于订阅模板）
-export const API_DOMAIN = process.env.API_DOMAIN || 'https://api.example.com'
+// 可信代理 IP（仅这些来源可被信任为转发代理）
+export const TRUSTED_PROXIES = process.env.TRUSTED_PROXIES || '127.0.0.1,::1'
+
+// CORS 允许来源
+export const CORS_ORIGIN = process.env.CORS_ORIGIN || '*'
 ```
 
 编辑 `src/config/defaultSubTemplate.yaml` 自定义订阅规则。

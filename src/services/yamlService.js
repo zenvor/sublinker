@@ -5,7 +5,6 @@ import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import yaml from 'js-yaml'
-import { API_DOMAIN } from '../config/appConfig.js'
 import { listNodesByToken } from './subscriptionNodeService.js'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -32,12 +31,16 @@ export function loadSubTemplate() {
  * 渲染一级订阅 YAML
  * 替换 __TOKEN__ 占位符为真实 token
  * @param {string} token - 用户 token
- * @param {string} [apiDomain] - 可选的 API 域名（优先级高于环境变量）
+ * @param {string} apiDomain - 请求中解析出的 API 域名
  * @returns {string} 渲染后的 YAML
  */
-export function renderSubYaml(token, apiDomain = '') {
+export function renderSubYaml(token, apiDomain) {
+  const finalApiDomain = String(apiDomain || '').trim()
+  if (!finalApiDomain) {
+    throw new Error('缺少 API 域名，无法渲染订阅')
+  }
+
   const template = loadSubTemplate()
-  const finalApiDomain = apiDomain || API_DOMAIN
   return template.replace(/__TOKEN__/g, token).replace(/__API_DOMAIN__/g, finalApiDomain)
 }
 
