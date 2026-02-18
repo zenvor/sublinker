@@ -12,7 +12,7 @@ import { logInfo, logError } from '../utils/logUtil.js'
 const router = new Router()
 
 /**
- * GET /provider?token=xxx
+ * GET /provider?t=xxx
  * 返回节点列表 YAML（proxy-providers 请求此接口）
  *
  * IP 绑定策略:
@@ -21,7 +21,7 @@ const router = new Router()
  * 3. 槽位已满时拒绝新 IP，需管理员手动清理
  */
 router.get('/provider', async (ctx) => {
-  const { token } = ctx.query
+  const token = ctx.query.t
 
   // 检查 token 参数
   if (!token) {

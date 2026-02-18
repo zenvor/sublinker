@@ -103,7 +103,7 @@ dns:
 proxy-providers:
   main:
     type: http
-    url: '__API_DOMAIN__/provider?token=__TOKEN__'
+    url: '__API_DOMAIN__/provider?t=__TOKEN__'
     path: ./providers/main.yaml
     interval: 600
     format: yaml
