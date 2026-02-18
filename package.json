@@ -11,7 +11,6 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
-    "devs": "npm run dev",
     "build": "echo 'JavaScript版本无需构建步骤'",
     "test": "echo '测试暂未实现'",
     "clean": "rimraf coverage",
@@ -19,8 +18,7 @@
     "pm2:start": "pm2 start ecosystem.config.cjs",
     "pm2:stop": "pm2 stop cloakgate",
     "pm2:restart": "pm2 restart cloakgate",
-    "pm2:logs": "pm2 logs cloakgate",
-    "install:all": "npm install"
+    "pm2:logs": "pm2 logs cloakgate"
   },
   "keywords": [
     "clash",
@@ -37,6 +35,7 @@
     "better-sqlite3": "^12.5.0",
     "dotenv": "^17.2.3",
     "js-yaml": "^4.1.1",
+    "jsonwebtoken": "^9.0.2",
     "koa": "^3.1.1",
     "koa-bodyparser": "^4.4.1"
   },

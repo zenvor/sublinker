@@ -6,6 +6,8 @@ import { renderSubYaml } from '../services/yamlService.js'
 import { getSubscription, isSubscriptionValid } from '../services/subscriptionService.js'
 import { getActiveIpCount } from '../services/ipTracker.js'
 import { recordIpHistory } from '../services/ipHistoryService.js'
+import { ensureSupportedClientUa } from '../middlewares/clientUa.js'
+import { logInfo, logError } from '../utils/logUtil.js'
 
 const router = new Router()
 
@@ -23,13 +25,12 @@ router.get('/sub', async (ctx) => {
     return
   }
 
-  // 检查 User-Agent，允许 Clash 和 Shadowrocket 客户端访问
-  const userAgent = ctx.headers['user-agent'] || ''
-  const userAgentLower = userAgent.toLowerCase()
-  if (!userAgentLower.includes('clash') && !userAgentLower.includes('shadowrocket')) {
-    ctx.fail(403, '不支持的客户端')
+  // 检查 User-Agent，仅允许支持的客户端访问
+  if (!ensureSupportedClientUa(ctx)) {
     return
   }
+
+  const userAgent = ctx.headers['user-agent'] || ''
 
   // 查询并校验订阅
   const subscription = getSubscription(token)
@@ -47,7 +48,7 @@ router.get('/sub', async (ctx) => {
     recordIpHistory(token, clientIp)
   }
 
-  console.log(`[Sub] 返回订阅: token=${token.slice(0, 8)}... ua=${userAgent.slice(0, 30)}`)
+  logInfo(`[Sub] 返回订阅: token=${token.slice(0, 8)}... ua=${userAgent.slice(0, 30)}`)
 
   try {
     const apiDomain = resolveApiDomain(ctx)
@@ -56,7 +57,7 @@ router.get('/sub', async (ctx) => {
     ctx.type = 'application/x-yaml; charset=utf-8'
     ctx.body = yaml
   } catch (err) {
-    console.error('渲染订阅失败:', err)
+    logError('渲染订阅失败:', err)
     ctx.fail(500, '服务内部错误')
   }
 })

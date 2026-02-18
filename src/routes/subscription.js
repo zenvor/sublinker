@@ -22,6 +22,7 @@ import {
   deleteNodesByToken,
 } from '../services/subscriptionNodeService.js'
 import db from '../db/index.js'
+import { logInfo } from '../utils/logUtil.js'
 
 const router = new Router({ prefix: '/admin' })
 
@@ -271,18 +272,18 @@ router.delete('/subscription/:token/active-ips', async (ctx) => {
 
     const removed = removeTokenIp(token, ip)
     if (!removed) {
-      console.log(`[Admin] 单个IP解绑失败: operator=${operator} token=${token.slice(0, 8)}... ip=${ip}`)
+      logInfo(`[Admin] 单个IP解绑失败: operator=${operator} token=${token.slice(0, 8)}... ip=${ip}`)
       ctx.fail(404, 'IP 不存在')
       return
     }
 
-    console.log(`[Admin] 单个IP解绑成功: operator=${operator} token=${token.slice(0, 8)}... ip=${ip}`)
+    logInfo(`[Admin] 单个IP解绑成功: operator=${operator} token=${token.slice(0, 8)}... ip=${ip}`)
     ctx.success(null, 'IP 解绑成功')
     return
   }
 
   clearTokenIps(token)
-  console.log(`[Admin] 全部IP解绑成功: operator=${operator} token=${token.slice(0, 8)}...`)
+  logInfo(`[Admin] 全部IP解绑成功: operator=${operator} token=${token.slice(0, 8)}...`)
   ctx.success(null, 'IP 解绑成功')
 })
 
@@ -330,7 +331,7 @@ router.delete('/subscription/:token/ip-history', async (ctx) => {
 
   const operator = ctx.state?.user?.username || 'unknown'
   clearIpHistory(token)
-  console.log(`[Admin] IP历史清除成功: operator=${operator} token=${token.slice(0, 8)}...`)
+  logInfo(`[Admin] IP历史清除成功: operator=${operator} token=${token.slice(0, 8)}...`)
   ctx.success(null, 'IP 历史已清除')
 })
 

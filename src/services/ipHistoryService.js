@@ -2,6 +2,7 @@
 // 记录用户所有访问过的 IP，用于后续封禁
 
 import db from '../db/index.js'
+import { logError } from '../utils/logUtil.js'
 
 /**
  * 记录 IP 访问历史
@@ -22,7 +23,7 @@ export function recordIpHistory(token, ip) {
     `)
     stmt.run(token, ip)
   } catch (error) {
-    console.error(`[ipHistory] 记录IP历史失败: token=${token.slice(0, 8)}... ip=${ip}`, error)
+    logError(`[ipHistory] 记录IP历史失败: token=${token.slice(0, 8)}... ip=${ip}`, error)
   }
 }
 
