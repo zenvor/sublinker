@@ -4,7 +4,6 @@
   <img src="https://img.shields.io/badge/Node.js-18+-339933?logo=node.js&logoColor=white" alt="Node.js">
   <img src="https://img.shields.io/badge/Koa-3.x-33333D?logo=koa&logoColor=white" alt="Koa">
   <img src="https://img.shields.io/badge/SQLite-3-003B57?logo=sqlite&logoColor=white" alt="SQLite">
-  <img src="https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white" alt="Docker">
   <img src="https://img.shields.io/badge/License-ISC-blue" alt="License">
 </p>
 
@@ -17,7 +16,7 @@ Clash 订阅分发服务，支持 **Token 验证** 和 **IP 绑定并发控制**
 - **一级订阅 + Provider** - 兼容 Clash `proxy-providers` 机制
 - **Admin API** - RESTful 接口管理订阅和查看已绑定 IP
 - **请求日志** - 记录时间、路径、Token、IP、UA、状态码
-- **Docker 部署** - 开箱即用的容器化部署方案
+- **PM2 部署** - 生产环境使用 PM2 进行进程托管
 - **防 QQ 预览** - User-Agent 检测机制，防止订阅链接被自动预览消费
 - **客户端检测** - 支持 Clash 和 Shadowrocket 客户端访问
 
@@ -58,16 +57,6 @@ sequenceDiagram
 
 ## 快速开始
 
-### 使用 Docker（推荐）
-
-```bash
-# 启动服务
-docker-compose up -d
-
-# 查看日志
-docker-compose logs -f
-```
-
 ### 本地开发
 
 ```bash
@@ -76,6 +65,25 @@ npm install
 
 # 启动开发服务器
 npm run dev
+```
+
+### 生产部署（PM2）
+
+```bash
+# 安装依赖
+npm install
+
+# 启动服务
+npm run pm2:start
+
+# 查看日志
+npm run pm2:logs
+
+# 重启服务
+npm run pm2:restart
+
+# 停止服务
+npm run pm2:stop
 ```
 
 ## API 接口
@@ -142,36 +150,6 @@ export const CORS_ORIGIN = process.env.CORS_ORIGIN || '*'
 ```
 
 编辑 `src/config/defaultSubTemplate.yaml` 自定义订阅规则。
-
-## 反向代理配置
-
-### Caddy（随机路径 + 前后端分离）
-
-```caddy
-panel.example.com {
-    encode gzip zstd
-
-    # 管理 API：/mEoDlubA1d4mISPXpQ/api/* -> 后端 /
-    handle_path /mEoDlubA1d4mISPXpQ/api/* {
-        reverse_proxy 127.0.0.1:3000
-    }
-
-    # 订阅接口可选同域转发（按需开启）
-    handle /sub* {
-        reverse_proxy 127.0.0.1:3000
-    }
-    handle /provider* {
-        reverse_proxy 127.0.0.1:3000
-    }
-
-    # 前端静态资源与 SPA 回退（strip 随机前缀）
-    handle_path /mEoDlubA1d4mISPXpQ/* {
-        root * /var/www/sublinker-ui
-        try_files {path} /index.html
-        file_server
-    }
-}
-```
 
 ## 依赖
 
