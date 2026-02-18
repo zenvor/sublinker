@@ -1,4 +1,4 @@
-// CloakGate - Clash 订阅分发服务
+// sublinker - Clash 订阅分发服务
 // 应用入口
 
 import Koa from 'koa'
