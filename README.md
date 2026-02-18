@@ -40,11 +40,11 @@ sequenceDiagram
     participant G as sublinker
     participant IP as IP Tracker
 
-    C->>G: GET /sub?token=xxx
+    C->>G: GET /sub?t=xxx
     G-->>C: 一级订阅 YAML (含 provider URL)
 
     loop 每 10 分钟 (interval)
-        C->>G: GET /provider?token=xxx
+        C->>G: GET /provider?t=xxx
         G->>IP: 检查活跃 IP 数量
         alt IP 数量未超限
             IP-->>G: 允许
@@ -85,8 +85,8 @@ npm run dev
 | 端点                  | 方法 | 说明                                                          |
 | --------------------- | ---- | ------------------------------------------------------------- |
 | `/health`             | GET  | 健康检查                                                      |
-| `/sub?token=xxx`      | GET  | 获取一级订阅 YAML (支持 Clash 和 Shadowrocket 客户端)         |
-| `/provider?token=xxx` | GET  | 获取节点列表（含 IP 控制）(支持 Clash 和 Shadowrocket 客户端) |
+| `/sub?t=xxx`      | GET  | 获取一级订阅 YAML (支持 Clash 和 Shadowrocket 客户端)         |
+| `/provider?t=xxx` | GET  | 获取节点列表（含 IP 控制）(支持 Clash 和 Shadowrocket 客户端) |
 
 ### 管理接口
 
@@ -111,9 +111,9 @@ npm run dev
 curl http://localhost:3000/health
 
 # 获取订阅 (需指定 UA，支持 Clash 或 Shadowrocket)
-curl -H "User-Agent: clash" "http://localhost:3000/sub?token=YOUR_TOKEN"
+curl -H "User-Agent: clash" "http://localhost:3000/sub?t=YOUR_TOKEN"
 # 或
-curl -H "User-Agent: Shadowrocket/2850" "http://localhost:3000/sub?token=YOUR_TOKEN"
+curl -H "User-Agent: Shadowrocket/2850" "http://localhost:3000/sub?t=YOUR_TOKEN"
 
 # 管理员登录
 curl -X POST http://localhost:3000/admin/auth/login \

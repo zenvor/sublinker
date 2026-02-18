@@ -38,7 +38,7 @@ export default async function logger(ctx, next) {
   const status = ctx.status
   const ip = ctx.realIp || ctx.ip
   const ua = ctx.headers['user-agent'] || '-'
-  const token = query.token ? `${query.token.slice(0, 8)}...` : '-'
+  const token = query.t ? `${query.t.slice(0, 8)}...` : '-'
 
   // 构建日志信息
   const logParts = [

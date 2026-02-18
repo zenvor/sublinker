@@ -18,7 +18,8 @@
     "pm2:start": "pm2 start ecosystem.config.cjs",
     "pm2:stop": "pm2 stop sublinker",
     "pm2:restart": "pm2 restart sublinker",
-    "pm2:logs": "pm2 logs sublinker"
+    "pm2:logs": "pm2 logs sublinker",
+    "export:postman": "node scripts/exportPostmanCollection.js"
   },
   "keywords": [
     "clash",
