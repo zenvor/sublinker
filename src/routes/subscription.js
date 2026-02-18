@@ -1,5 +1,5 @@
 // 订阅管理接口
-// 用于管理订阅和查看活跃 IP
+// 用于管理订阅和查看已绑定 IP
 
 import Router from '@koa/router'
 import {
@@ -98,7 +98,7 @@ router.get('/subscription', async (ctx) => {
   const tokens = subscriptions.map((item) => item.token)
   const nodeCountMap = getNodeCountsByTokens(tokens)
 
-  // 为每个订阅添加活跃 IP 数量
+  // 为每个订阅添加已绑定 IP 数量
   const rows = subscriptions.map((sub) => ({
     ...sub,
     activeIpCount: getActiveIps(sub.token).length,
@@ -124,7 +124,7 @@ router.get('/subscription/:token', async (ctx) => {
     return
   }
 
-  // 添加活跃 IP 数量与节点信息
+  // 添加已绑定 IP 数量与节点信息
   subscription.activeIpCount = getActiveIps(token).length
   subscription.nodeLinksText = getNodeLinksTextByToken(token)
   subscription.nodeCount = getNodeCountsByTokens([token])[token] || 0
@@ -216,10 +216,10 @@ router.delete('/subscription/:token', async (ctx) => {
 })
 
 /**
- * GET /admin/subscription/:token/active-ips
- * 查看订阅的已绑定 IP 列表
+ * GET /admin/subscription/:token/boundIps
+ * 查看订阅链接已绑定的 IP 列表
  */
-router.get('/subscription/:token/active-ips', async (ctx) => {
+router.get('/subscription/:token/boundIps', async (ctx) => {
   const { token } = ctx.params
 
   // 检查订阅是否存在
@@ -244,10 +244,10 @@ router.get('/subscription/:token/active-ips', async (ctx) => {
 })
 
 /**
- * DELETE /admin/subscription/:token/active-ips
- * 解绑订阅的所有 IP
+ * DELETE /admin/subscription/:token/boundIps
+ * 解绑订阅链接已绑定的 IP（支持解绑单个或全部）
  */
-router.delete('/subscription/:token/active-ips', async (ctx) => {
+router.delete('/subscription/:token/boundIps', async (ctx) => {
   const { token } = ctx.params
   const body = ctx.request.body || {}
   const hasIpField = Object.prototype.hasOwnProperty.call(body, 'ip')
