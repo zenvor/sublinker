@@ -11,7 +11,6 @@ import {
   getSubscriptionCount,
 } from '../services/subscriptionService.js'
 import { getActiveIps, clearTokenIps, removeTokenIp } from '../services/ipTracker.js'
-import { getIpHistory, clearIpHistory } from '../services/ipHistoryService.js'
 import { authMiddleware } from '../middlewares/authMiddleware.js'
 import { parseVlessNodeLinks } from '../services/vlessParserService.js'
 import {
@@ -284,54 +283,6 @@ router.delete('/subscription/:token/boundIps', async (ctx) => {
   clearTokenIps(token)
   logInfo(`[Admin] 全部IP解绑成功: operator=${operator} token=${token.slice(0, 8)}...`)
   ctx.success(null, 'IP 解绑成功')
-})
-
-/**
- * GET /admin/subscription/:token/ip-history
- * 查看订阅的所有 IP 历史记录
- */
-router.get('/subscription/:token/ip-history', async (ctx) => {
-  const { token } = ctx.params
-
-  // 检查订阅是否存在
-  const subscription = getSubscription(token)
-  if (!subscription) {
-    ctx.fail(404, '订阅不存在')
-    return
-  }
-
-  const ipHistory = getIpHistory(token)
-
-  ctx.success({
-    token: token.slice(0, 8) + '...',
-    count: ipHistory.length,
-    ips: ipHistory.map((item) => ({
-      ip: item.ip,
-      firstSeenAt: item.firstSeenAt,
-      lastSeenAt: item.lastSeenAt,
-      accessCount: item.accessCount,
-    })),
-  })
-})
-
-/**
- * DELETE /admin/subscription/:token/ip-history
- * 清除订阅的 IP 历史记录
- */
-router.delete('/subscription/:token/ip-history', async (ctx) => {
-  const { token } = ctx.params
-
-  // 检查订阅是否存在
-  const subscription = getSubscription(token)
-  if (!subscription) {
-    ctx.fail(404, '订阅不存在')
-    return
-  }
-
-  const operator = ctx.state?.user?.username || 'unknown'
-  clearIpHistory(token)
-  logInfo(`[Admin] IP历史清除成功: operator=${operator} token=${token.slice(0, 8)}...`)
-  ctx.success(null, 'IP 历史已清除')
 })
 
 export default router

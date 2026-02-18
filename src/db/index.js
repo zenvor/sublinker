@@ -57,19 +57,6 @@ db.exec(`
 
   CREATE INDEX IF NOT EXISTS idx_ip_bindings_token ON ip_bindings(token);
 
-  CREATE TABLE IF NOT EXISTS ip_history (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    token TEXT NOT NULL,
-    ip TEXT NOT NULL,
-    first_seen_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    last_seen_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    access_count INTEGER DEFAULT 1,
-    UNIQUE(token, ip),
-    FOREIGN KEY(token) REFERENCES subscriptions(token) ON DELETE CASCADE
-  );
-
-  CREATE INDEX IF NOT EXISTS idx_ip_history_token ON ip_history(token);
-
   CREATE TABLE IF NOT EXISTS subscription_nodes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     token TEXT NOT NULL,

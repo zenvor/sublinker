@@ -5,7 +5,6 @@ import Router from '@koa/router'
 import { getSubscription, isSubscriptionValid } from '../services/subscriptionService.js'
 import { updateAndCheck, getActiveIps } from '../services/ipTracker.js'
 import { generateProxiesYaml, generateEmptyProxiesYaml } from '../services/yamlService.js'
-import { recordIpHistory } from '../services/ipHistoryService.js'
 import { ensureSupportedClientUa } from '../utils/clientUa.js'
 import { logInfo, logError } from '../utils/logUtil.js'
 
@@ -71,11 +70,6 @@ router.get('/provider', async (ctx) => {
     ctx.type = 'application/x-yaml; charset=utf-8'
     ctx.body = generateEmptyProxiesYaml()
     return
-  }
-
-  // 记录 IP 历史（绑定检查通过后无条件记录，包括首次绑定）
-  if (allowed) {
-    recordIpHistory(token, clientIp)
   }
 
   if (!allowed) {
