@@ -1,5 +1,15 @@
 // 认证配置
 
+import dotenv from 'dotenv'
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+// 防御性加载：消除对 appConfig.js 导入顺序的隐式依赖
+dotenv.config({ path: path.join(__dirname, '../../.env'), quiet: true })
+
 /**
  * 读取必填环境变量
  * @param {string} key
@@ -19,10 +29,10 @@ function getRequiredEnv(key) {
 export const adminConfig = {
   username: getRequiredEnv('ADMIN_USERNAME'),
   password: getRequiredEnv('ADMIN_PASSWORD'),
-};
+}
 
 // JWT 配置
 export const jwtConfig = {
   secret: getRequiredEnv('JWT_SECRET'),
   expiresIn: process.env.JWT_EXPIRES_IN || '24h',
-};
+}

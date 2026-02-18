@@ -19,6 +19,9 @@ fs.mkdirSync(path.dirname(dbPath), { recursive: true })
 // 创建数据库连接
 const db = new Database(dbPath)
 
+// 启用外键约束
+db.pragma('foreign_keys = ON')
+
 // 初始化表结构
 db.exec(`
   CREATE TABLE IF NOT EXISTS subscriptions (
@@ -30,7 +33,7 @@ db.exec(`
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     expired_at DATETIME
   );
-  
+
   CREATE INDEX IF NOT EXISTS idx_subscriptions_token ON subscriptions(token);
   CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON subscriptions(status);
 
@@ -48,9 +51,10 @@ db.exec(`
     ip TEXT NOT NULL,
     bound_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     last_seen_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(token, ip)
+    UNIQUE(token, ip),
+    FOREIGN KEY(token) REFERENCES subscriptions(token) ON DELETE CASCADE
   );
-  
+
   CREATE INDEX IF NOT EXISTS idx_ip_bindings_token ON ip_bindings(token);
 
   CREATE TABLE IF NOT EXISTS ip_history (
@@ -60,7 +64,8 @@ db.exec(`
     first_seen_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     last_seen_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     access_count INTEGER DEFAULT 1,
-    UNIQUE(token, ip)
+    UNIQUE(token, ip),
+    FOREIGN KEY(token) REFERENCES subscriptions(token) ON DELETE CASCADE
   );
 
   CREATE INDEX IF NOT EXISTS idx_ip_history_token ON ip_history(token);
@@ -87,11 +92,21 @@ db.exec(`
     sort_order INTEGER NOT NULL DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(token, raw_link)
+    UNIQUE(token, raw_link),
+    FOREIGN KEY(token) REFERENCES subscriptions(token) ON DELETE CASCADE
   );
 
   CREATE INDEX IF NOT EXISTS idx_subscription_nodes_token ON subscription_nodes(token);
   CREATE INDEX IF NOT EXISTS idx_subscription_nodes_token_sort ON subscription_nodes(token, sort_order);
+
+  -- updated_at 自动维护触发器
+  CREATE TRIGGER IF NOT EXISTS trg_subscription_nodes_updated_at
+  AFTER UPDATE ON subscription_nodes
+  BEGIN UPDATE subscription_nodes SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id; END;
+
+  CREATE TRIGGER IF NOT EXISTS trg_admins_updated_at
+  AFTER UPDATE ON admins
+  BEGIN UPDATE admins SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id; END;
 `)
 
 export default db

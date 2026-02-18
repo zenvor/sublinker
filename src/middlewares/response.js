@@ -14,13 +14,13 @@ export default async function response(ctx, next) {
    * @param {number} statusCode - HTTP 状态码
    */
   ctx.success = (data = null, message = 'success', statusCode = 200) => {
-    ctx.status = statusCode;
+    ctx.status = statusCode
     ctx.body = {
       code: statusCode,
       message,
       data
-    };
-  };
+    }
+  }
 
   /**
    * 失败响应
@@ -28,12 +28,12 @@ export default async function response(ctx, next) {
    * @param {string} message - 错误消息
    */
   ctx.fail = (code = 400, message = '请求失败') => {
-    ctx.status = code;
+    ctx.status = code
     ctx.body = {
       code,
       message
-    };
-  };
+    }
+  }
 
-  await next();
+  await next()
 }

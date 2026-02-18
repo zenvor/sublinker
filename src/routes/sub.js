@@ -4,9 +4,8 @@
 import Router from '@koa/router'
 import { renderSubYaml } from '../services/yamlService.js'
 import { getSubscription, isSubscriptionValid } from '../services/subscriptionService.js'
-import { getActiveIpCount } from '../services/ipTracker.js'
 import { recordIpHistory } from '../services/ipHistoryService.js'
-import { ensureSupportedClientUa } from '../middlewares/clientUa.js'
+import { ensureSupportedClientUa } from '../utils/clientUa.js'
 import { logInfo, logError } from '../utils/logUtil.js'
 
 const router = new Router()
@@ -41,12 +40,9 @@ router.get('/sub', async (ctx) => {
     return
   }
 
-  // 获取客户端真实 IP 并记录历史（仅当已有绑定时）
+  // 获取客户端真实 IP 并记录历史
   const clientIp = ctx.realIp || ctx.ip
-  const currentBindings = getActiveIpCount(token)
-  if (currentBindings > 0) {
-    recordIpHistory(token, clientIp)
-  }
+  recordIpHistory(token, clientIp)
 
   logInfo(`[Sub] 返回订阅: token=${token.slice(0, 8)}... ua=${userAgent.slice(0, 30)}`)
 

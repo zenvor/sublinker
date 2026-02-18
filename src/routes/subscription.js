@@ -3,11 +3,11 @@
 
 import Router from '@koa/router'
 import {
-  createSubscription,
+  createSubscriptionWithNodes,
+  updateSubscriptionWithNodes,
+  deleteSubscriptionWithRelated,
   listSubscriptions,
   getSubscription,
-  updateSubscription,
-  deleteSubscription,
   getSubscriptionCount,
 } from '../services/subscriptionService.js'
 import { getActiveIps, clearTokenIps, removeTokenIp } from '../services/ipTracker.js'
@@ -15,19 +15,28 @@ import { getIpHistory, clearIpHistory } from '../services/ipHistoryService.js'
 import { authMiddleware } from '../middlewares/authMiddleware.js'
 import { parseVlessNodeLinks } from '../services/vlessParserService.js'
 import {
-  replaceNodesByToken,
-  replaceNodesByTokenInSameTransaction,
   getNodeLinksTextByToken,
   getNodeCountsByTokens,
-  deleteNodesByToken,
 } from '../services/subscriptionNodeService.js'
-import db from '../db/index.js'
 import { logInfo } from '../utils/logUtil.js'
 
 const router = new Router({ prefix: '/admin' })
 
 // 应用认证中间件：该路由下的所有请求都需要经过认证
 router.use(authMiddleware())
+
+/**
+ * 校验 expiredAt 是否为合法日期
+ * @param {*} expiredAt
+ * @returns {boolean}
+ */
+function isValidExpiredAt(expiredAt) {
+  if (expiredAt === null || expiredAt === undefined) {
+    return true
+  }
+  const d = new Date(expiredAt)
+  return !isNaN(d.getTime())
+}
 
 /**
  * POST /admin/subscription
@@ -51,6 +60,11 @@ router.post('/subscription', async (ctx) => {
     return
   }
 
+  if (!isValidExpiredAt(expiredAt)) {
+    ctx.fail(400, '过期时间格式无效')
+    return
+  }
+
   let parsedNodes
   try {
     parsedNodes = parseVlessNodeLinks(nodeLinksText)
@@ -60,12 +74,6 @@ router.post('/subscription', async (ctx) => {
   }
 
   try {
-    const createSubscriptionWithNodes = db.transaction((payload, nodes) => {
-      const createdSubscription = createSubscription(payload)
-      replaceNodesByTokenInSameTransaction(createdSubscription.token, nodes)
-      return createdSubscription
-    })
-
     const subscription = createSubscriptionWithNodes({ remark, maxIps, expiredAt }, parsedNodes)
     ctx.success(subscription, '订阅创建成功', 201)
   } catch (error) {
@@ -78,8 +86,14 @@ router.post('/subscription', async (ctx) => {
  * 列出所有订阅
  */
 router.get('/subscription', async (ctx) => {
-  const { limit = 50, offset = 0 } = ctx.query
-  const subscriptions = listSubscriptions(parseInt(limit), parseInt(offset))
+  let limit = parseInt(ctx.query.limit)
+  let offset = parseInt(ctx.query.offset)
+
+  if (isNaN(limit) || limit < 0) { limit = 50 }
+  if (limit > 100) { limit = 100 }
+  if (isNaN(offset) || offset < 0) { offset = 0 }
+
+  const subscriptions = listSubscriptions(limit, offset)
   const total = getSubscriptionCount()
   const tokens = subscriptions.map((item) => item.token)
   const nodeCountMap = getNodeCountsByTokens(tokens)
@@ -144,6 +158,12 @@ router.put('/subscription/:token', async (ctx) => {
     return
   }
 
+  // 验证 expiredAt
+  if (expiredAt !== undefined && !isValidExpiredAt(expiredAt)) {
+    ctx.fail(400, '过期时间格式无效')
+    return
+  }
+
   let parsedNodes = null
   if (nodeLinksText !== undefined) {
     if (typeof nodeLinksText !== 'string' || !nodeLinksText.trim()) {
@@ -166,26 +186,9 @@ router.put('/subscription/:token', async (ctx) => {
     return
   }
 
-  if (hasSubscriptionUpdates) {
+  if (hasSubscriptionUpdates || parsedNodes !== null) {
     try {
-      const updateSubscriptionWithNodes = db.transaction((targetToken, updates, nodes, shouldUpdate) => {
-        if (shouldUpdate) {
-          updateSubscription(targetToken, updates)
-        }
-
-        if (nodes !== null) {
-          replaceNodesByTokenInSameTransaction(targetToken, nodes)
-        }
-      })
-
       updateSubscriptionWithNodes(token, { remark, maxIps, status, expiredAt }, parsedNodes, hasSubscriptionUpdates)
-    } catch (error) {
-      ctx.fail(400, error.message || '节点保存失败')
-      return
-    }
-  } else if (parsedNodes !== null) {
-    try {
-      replaceNodesByToken(token, parsedNodes)
     } catch (error) {
       ctx.fail(400, error.message || '节点保存失败')
       return
@@ -201,16 +204,12 @@ router.put('/subscription/:token', async (ctx) => {
  */
 router.delete('/subscription/:token', async (ctx) => {
   const { token } = ctx.params
-  const deleted = deleteSubscription(token)
+  const deleted = deleteSubscriptionWithRelated(token)
 
   if (!deleted) {
     ctx.fail(404, '订阅不存在')
     return
   }
-
-  // 同时清除该订阅的活跃 IP 记录
-  clearTokenIps(token)
-  deleteNodesByToken(token)
 
   ctx.status = 204
   ctx.body = null
