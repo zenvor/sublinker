@@ -1,5 +1,5 @@
 {
-  "name": "cloakgate",
+  "name": "sublinker",
   "version": "1.0.0",
   "description": "Clash 订阅分发服务 - JavaScript 版本",
   "private": true,
@@ -16,9 +16,9 @@
     "clean": "rimraf coverage",
     "lint": "eslint src/",
     "pm2:start": "pm2 start ecosystem.config.cjs",
-    "pm2:stop": "pm2 stop cloakgate",
-    "pm2:restart": "pm2 restart cloakgate",
-    "pm2:logs": "pm2 logs cloakgate"
+    "pm2:stop": "pm2 stop sublinker",
+    "pm2:restart": "pm2 restart sublinker",
+    "pm2:logs": "pm2 logs sublinker"
   },
   "keywords": [
     "clash",

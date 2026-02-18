@@ -1,4 +1,4 @@
-# CloakGate
+# sublinker
 
 <p align="center">
   <img src="https://img.shields.io/badge/Node.js-18+-339933?logo=node.js&logoColor=white" alt="Node.js">
@@ -37,7 +37,7 @@ Clash 订阅分发服务，支持 **Token 验证** 和 **IP 绑定并发控制**
 ```mermaid
 sequenceDiagram
     participant C as Clash Client
-    participant G as CloakGate
+    participant G as sublinker
     participant IP as IP Tracker
 
     C->>G: GET /sub?token=xxx
@@ -165,7 +165,7 @@ panel.example.com {
 
     # 前端静态资源与 SPA 回退（strip 随机前缀）
     handle_path /mEoDlubA1d4mISPXpQ/* {
-        root * /var/www/cloakGateWeb
+        root * /var/www/sublinker-ui
         try_files {path} /index.html
         file_server
     }

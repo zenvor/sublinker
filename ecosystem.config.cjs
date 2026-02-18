@@ -5,7 +5,7 @@
 module.exports = {
   apps: [
     {
-      name: 'cloakgate',
+      name: 'sublinker',
       script: './src/app.js',
       cwd: __dirname,
       instances: 1,
@@ -20,8 +20,8 @@ module.exports = {
       },
       // 日志配置
       log_date_format: 'YYYY-MM-DD HH:mm:ss',
-      error_file: './logs/cloakgate-error.log',
-      out_file: './logs/cloakgate-out.log',
+      error_file: './logs/sublinker-error.log',
+      out_file: './logs/sublinker-out.log',
       merge_logs: true,
       // 内存限制，超过自动重启
       max_memory_restart: '500M',

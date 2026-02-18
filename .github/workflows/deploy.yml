@@ -11,8 +11,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  deployPath: /opt/CloakGate
-  appName: cloakgate
+  deployPath: /opt/sublinker
+  appName: sublinker
   servicePort: 3000
 
 jobs:
