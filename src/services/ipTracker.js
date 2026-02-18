@@ -2,6 +2,7 @@
 // 使用数据库持久化 token-IP 绑定，绑定后不会自动过期
 
 import db from '../db/index.js';
+import { logInfo } from '../utils/logUtil.js';
 
 /**
  * 检查 IP 绑定并更新记录
@@ -29,7 +30,7 @@ export function updateAndCheck(token, ip, maxIps) {
   // 如果已达到绑定上限，拒绝访问
   // maxIps 为 0 时表示无限制
   if (maxIps > 0 && boundCount >= maxIps) {
-    console.log(`[ipTracker] 新IP绑定失败-槽位已满: token=${token.slice(0, 8)}... ip=${ip} slots=${boundCount}/${maxIps}`);
+    logInfo(`[ipTracker] 新IP绑定失败-槽位已满: token=${token.slice(0, 8)}... ip=${ip} slots=${boundCount}/${maxIps}`);
     return false;
   }
   
@@ -37,7 +38,7 @@ export function updateAndCheck(token, ip, maxIps) {
   const info = db.prepare('INSERT OR IGNORE INTO ip_bindings (token, ip, last_seen_at) VALUES (?, ?, CURRENT_TIMESTAMP)').run(token, ip);
   
   if (info.changes > 0) {
-    console.log(`[ipTracker] 新IP绑定成功: token=${token.slice(0, 8)}... ip=${ip} slots=${boundCount + 1}/${maxIps || '∞'}`);
+    logInfo(`[ipTracker] 新IP绑定成功: token=${token.slice(0, 8)}... ip=${ip} slots=${boundCount + 1}/${maxIps || '∞'}`);
   }
   
   return true;

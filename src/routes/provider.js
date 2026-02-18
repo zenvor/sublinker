@@ -6,6 +6,8 @@ import { getSubscription, isSubscriptionValid } from '../services/subscriptionSe
 import { updateAndCheck, getActiveIps, getActiveIpCount } from '../services/ipTracker.js'
 import { generateProxiesYaml, generateEmptyProxiesYaml } from '../services/yamlService.js'
 import { recordIpHistory } from '../services/ipHistoryService.js'
+import { ensureSupportedClientUa } from '../middlewares/clientUa.js'
+import { logInfo, logError } from '../utils/logUtil.js'
 
 const router = new Router()
 
@@ -29,14 +31,17 @@ router.get('/provider', async (ctx) => {
     return
   }
 
-  // 检查 User-Agent，允许 Clash 和 Shadowrocket 客户端访问
-  const userAgent = ctx.headers['user-agent'] || ''
-  const userAgentLower = userAgent.toLowerCase()
-  if (!userAgentLower.includes('clash') && !userAgentLower.includes('shadowrocket')) {
-    console.log(`[Provider] UA检测失败: token=${token.slice(0, 8)}... ua=${userAgent.slice(0, 30)}`)
-    ctx.status = 403
-    ctx.type = 'application/x-yaml; charset=utf-8'
-    ctx.body = generateEmptyProxiesYaml()
+  // 检查 User-Agent，仅允许支持的客户端访问
+  if (
+    !ensureSupportedClientUa(ctx, {
+      onFail: (targetCtx, userAgent) => {
+        logInfo(`[Provider] UA检测失败: token=${token.slice(0, 8)}... ua=${String(userAgent).slice(0, 30)}`)
+        targetCtx.status = 403
+        targetCtx.type = 'application/x-yaml; charset=utf-8'
+        targetCtx.body = generateEmptyProxiesYaml()
+      },
+    })
+  ) {
     return
   }
 
@@ -45,7 +50,7 @@ router.get('/provider', async (ctx) => {
   const validation = isSubscriptionValid(subscription)
 
   if (!validation.valid) {
-    console.log(`[Provider] 订阅校验失败: ${token} - ${validation.reason}`)
+    logInfo(`[Provider] 订阅校验失败: ${token} - ${validation.reason}`)
     ctx.status = 403
     ctx.type = 'application/x-yaml; charset=utf-8'
     ctx.body = generateEmptyProxiesYaml()
@@ -61,7 +66,7 @@ router.get('/provider', async (ctx) => {
   try {
     allowed = updateAndCheck(token, clientIp, subscription.max_ips)
   } catch (err) {
-    console.error(`[Provider] IP绑定检查异常: token=${token.slice(0, 8)}... ip=${clientIp}`, err)
+    logError(`[Provider] IP绑定检查异常: token=${token.slice(0, 8)}... ip=${clientIp}`, err)
     ctx.status = 500
     ctx.type = 'application/x-yaml; charset=utf-8'
     ctx.body = generateEmptyProxiesYaml()
@@ -78,7 +83,7 @@ router.get('/provider', async (ctx) => {
   if (!allowed) {
     // 超限：返回 403 IP 绑定数量超限
     const activeIps = getActiveIps(token)
-    console.log(
+    logInfo(
       `[Provider] IP超限: token=${token.slice(0, 8)}... ip=${clientIp} bound=${activeIps.length}/${subscription.max_ips}`,
     )
     ctx.status = 403
@@ -89,7 +94,7 @@ router.get('/provider', async (ctx) => {
 
   // 通过：返回真实节点列表
   // 注意：此时IP已经成功绑定或更新活跃时间
-  console.log(`[Provider] 允许访问: token=${token.slice(0, 8)}... ip=${clientIp}`)
+  logInfo(`[Provider] 允许访问: token=${token.slice(0, 8)}... ip=${clientIp}`)
 
   try {
     // 使用订阅绑定的动态节点配置
@@ -97,7 +102,7 @@ router.get('/provider', async (ctx) => {
     ctx.type = 'application/x-yaml; charset=utf-8'
     ctx.body = yaml
   } catch (err) {
-    console.error('生成节点列表失败:', err)
+    logError('生成节点列表失败:', err)
     ctx.status = 500
     ctx.type = 'application/x-yaml; charset=utf-8'
     ctx.body = generateEmptyProxiesYaml()

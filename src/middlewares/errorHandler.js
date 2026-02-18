@@ -1,16 +1,27 @@
 // 错误处理中间件
 // 统一捕获错误并返回友好响应
 
+import { logError } from '../utils/logUtil.js'
+
 export default async function errorHandler(ctx, next) {
   try {
-    await next();
+    await next()
   } catch (err) {
-    console.error('请求处理错误:', err);
-    
-    ctx.status = err.status || 500;
+    logError('请求处理错误:', err)
+
+    const statusCode = err.status || 500
+    const message = err.message || '服务内部错误'
+
+    if (typeof ctx.fail === 'function') {
+      ctx.fail(statusCode, message)
+      return
+    }
+
+    // 兜底分支：避免 response 中间件未挂载时响应结构不一致
+    ctx.status = statusCode
     ctx.body = {
-      error: true,
-      message: err.message || '服务内部错误'
-    };
+      code: statusCode,
+      message,
+    }
   }
 }

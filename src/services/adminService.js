@@ -4,6 +4,7 @@
 import bcrypt from 'bcryptjs';
 import db from '../db/index.js';
 import { adminConfig } from '../config/authConfig.js';
+import { logError, logInfo } from '../utils/logUtil.js';
 
 /**
  * 初始化管理员账号
@@ -14,7 +15,7 @@ export async function initAdmin() {
     const row = db.prepare('SELECT count(*) as count FROM admins').get();
     
     if (row.count === 0) {
-      console.log('检测到无管理员账号，正在初始化默认管理员...');
+      logInfo('检测到无管理员账号，正在初始化默认管理员...');
       
       const { username, password } = adminConfig;
       const salt = await bcrypt.genSalt(10);
@@ -23,10 +24,11 @@ export async function initAdmin() {
       const insert = db.prepare('INSERT INTO admins (username, password) VALUES (?, ?)');
       insert.run(username, hashedPassword);
       
-      console.log(`默认管理员已创建: ${username}`);
+      logInfo(`默认管理员已创建: ${username}`);
     }
   } catch (error) {
-    console.error('初始化管理员账号失败:', error);
+    logError('初始化管理员账号失败:', error);
+    throw error;
   }
 }
 
