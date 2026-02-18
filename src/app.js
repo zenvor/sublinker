@@ -4,12 +4,9 @@
 import Koa from 'koa';
 import Router from '@koa/router';
 import os from 'os';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
 import cors from '@koa/cors';
 import bodyParser from 'koa-bodyparser';
-import serve from 'koa-static';
 import { PORT } from './config/appConfig.js';
 import { initAdmin } from './services/adminService.js';
 import errorHandler from './middlewares/errorHandler.js';
@@ -24,9 +21,6 @@ import subscriptionRouter from './routes/subscription.js';
 
 const app = new Koa();
 const router = new Router();
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const publicDir = path.resolve(__dirname, '../public');
 
 // 获取本地 IP 地址
 function getLocalIPs() {
@@ -51,7 +45,6 @@ app.use(bodyParser());     // JSON 请求体解析
 app.use(response);         // 统一响应格式
 app.use(realIp);
 app.use(logger);
-app.use(serve(publicDir)); // 前端静态资源
 
 // 健康检查端点
 router.get('/health', (ctx) => {
@@ -74,25 +67,6 @@ app.use(subscriptionRouter.allowedMethods());
 
 app.use(router.routes());
 app.use(router.allowedMethods());
-
-// SPA 刷新回退：浏览器直接访问子路由时返回 index.html
-app.use(async (ctx, next) => {
-  await next();
-
-  if (ctx.status !== 404 || ctx.method !== 'GET') {
-    return;
-  }
-
-  const accept = ctx.get('accept');
-  if (!accept.includes('text/html')) {
-    return;
-  }
-
-  ctx.status = 200;
-  ctx.type = 'text/html';
-  ctx.path = '/index.html';
-  await serve(publicDir)(ctx, async () => {});
-});
 
 // 启动服务
 initAdmin().then(() => {

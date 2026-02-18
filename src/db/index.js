@@ -9,9 +9,9 @@ import { fileURLToPath } from 'url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-// 数据库文件路径（位于monorepo根目录的 data 文件夹）
-// packages/javascript-package/src/db -> ../../../../data
-const defaultDbPath = path.join(__dirname, '../../../../data/cloakgate.db')
+// 数据库文件路径（位于项目根目录 data 文件夹）
+// src/db -> ../../data
+const defaultDbPath = path.join(__dirname, '../../data/cloakgate.db')
 const dbPath = process.env.DB_PATH ? path.resolve(process.env.DB_PATH) : defaultDbPath
 
 fs.mkdirSync(path.dirname(dbPath), { recursive: true })

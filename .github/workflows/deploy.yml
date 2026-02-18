@@ -31,11 +31,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-        working-directory: packages/javascript-package
 
       - name: Run ESLint
         run: npm run lint
-        working-directory: packages/javascript-package
 
   deploy:
     name: Pull and restart service
@@ -78,10 +76,8 @@ jobs:
             command -v npm >/dev/null 2>&1 || { echo "npm not found on server"; exit 1; }
             command -v pm2 >/dev/null 2>&1 || { echo "pm2 not found on server"; exit 1; }
 
-            cd packages/javascript-package
             npm ci --omit=dev
 
-            cd "${{ env.deployPath }}"
             pm2 describe "${{ env.appName }}" >/dev/null 2>&1 && npm run pm2:restart || npm run pm2:start
             sleep 3
             curl -fsS "http://localhost:${{ env.servicePort }}/health"

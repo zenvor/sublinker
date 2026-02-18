@@ -8,9 +8,9 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// 加载根目录的 .env 文件 (monorepo架构)
-// packages/javascript-package/src/config -> ../../../../.env
-dotenv.config({ path: path.join(__dirname, '../../../../.env') });
+// 加载项目根目录 .env 文件
+// src/config -> ../../.env
+dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 // 服务端口
 export const PORT = process.env.PORT || 3000;

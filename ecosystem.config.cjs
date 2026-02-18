@@ -6,7 +6,7 @@ module.exports = {
   apps: [
     {
       name: 'cloakgate',
-      script: './packages/javascript-package/src/app.js',
+      script: './src/app.js',
       cwd: __dirname,
       instances: 1,
       exec_mode: 'fork',
