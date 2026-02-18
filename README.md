@@ -15,7 +15,7 @@ Clash 订阅分发服务，支持 **Token 验证** 和 **IP 绑定并发控制**
 - **订阅管理** - 支持订阅创建、禁用、过期时间和节点管理
 - **IP 并发控制** - 超限自动返回空节点列表
 - **一级订阅 + Provider** - 兼容 Clash `proxy-providers` 机制
-- **Admin API** - RESTful 接口管理订阅和查看活跃 IP
+- **Admin API** - RESTful 接口管理订阅和查看已绑定 IP
 - **请求日志** - 记录时间、路径、Token、IP、UA、状态码
 - **Docker 部署** - 开箱即用的容器化部署方案
 - **防 QQ 预览** - User-Agent 检测机制，防止订阅链接被自动预览消费
@@ -45,7 +45,7 @@ sequenceDiagram
 
     loop 每 10 分钟 (interval)
         C->>G: GET /provider?t=xxx
-        G->>IP: 检查活跃 IP 数量
+        G->>IP: 检查已绑定 IP 数量
         alt IP 数量未超限
             IP-->>G: 允许
             G-->>C: 节点列表 YAML
@@ -99,8 +99,8 @@ npm run dev
 | `/admin/subscription/:token`              | GET    | 获取订阅详情              |
 | `/admin/subscription/:token`              | PUT    | 更新订阅                  |
 | `/admin/subscription/:token`              | DELETE | 删除订阅                  |
-| `/admin/subscription/:token/active-ips`   | GET    | 查看当前绑定 IP           |
-| `/admin/subscription/:token/active-ips`   | DELETE | 解绑全部 IP 或解绑单个 IP |
+| `/admin/subscription/:token/boundIps`     | GET    | 查看当前绑定 IP           |
+| `/admin/subscription/:token/boundIps`     | DELETE | 解绑全部 IP 或解绑单个 IP |
 | `/admin/subscription/:token/ip-history`   | GET    | 查看 IP 历史              |
 | `/admin/subscription/:token/ip-history`   | DELETE | 清空 IP 历史              |
 
@@ -126,9 +126,9 @@ curl -X POST http://localhost:3000/admin/subscription \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{"remark":"用户A","nodeLinksText":"vless://...","maxIps":2}'
 
-# 查看活跃 IP
+# 查看已绑定 IP
 curl -H "Authorization: Bearer YOUR_TOKEN" \
-  http://localhost:3000/admin/subscription/SUBSCRIPTION_TOKEN/active-ips
+  http://localhost:3000/admin/subscription/SUBSCRIPTION_TOKEN/boundIps
 ```
 
 ## 配置说明

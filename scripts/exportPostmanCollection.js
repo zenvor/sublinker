@@ -110,7 +110,7 @@ function getRequestBody(httpMethod, pathValue) {
     }
   }
 
-  if (httpMethod === 'DELETE' && pathValue === '/admin/subscription/:token/active-ips') {
+  if (httpMethod === 'DELETE' && pathValue === '/admin/subscription/:token/boundIps') {
     return {
       mode: 'raw',
       raw: JSON.stringify({ ip: '1.2.3.4' }, null, 2),
