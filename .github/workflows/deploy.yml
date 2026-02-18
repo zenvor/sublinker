@@ -3,6 +3,7 @@ name: Deploy to VPS
 on:
   push:
     branches:
+      - main
       - master
   workflow_dispatch:
 
@@ -38,52 +39,36 @@ jobs:
         working-directory: packages/javascript-package
 
   deploy:
-    name: Upload and restart service
+    name: Pull and restart service
     runs-on: ubuntu-latest
     needs: lint
-    environment: production
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Prepare SSH key
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p ~/.ssh
-          printf '%s\n' "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H -p "${{ secrets.VPS_PORT || 22 }}" "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
-
-      - name: Upload project archive to server
-        shell: bash
-        run: |
-          set -euo pipefail
-          tar -czf /tmp/cloakgate-deploy.tgz \
-            --exclude=".git" \
-            --exclude=".github" \
-            --exclude="node_modules" \
-            --exclude="logs" \
-            .
-
-          scp -i ~/.ssh/id_ed25519 -P "${{ secrets.VPS_PORT || 22 }}" /tmp/cloakgate-deploy.tgz "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/tmp/cloakgate-deploy.tgz"
-
-      - name: Install and restart app on server
+      - name: Deploy on server through SSH
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT || 22 }}
-          fingerprint: ${{ secrets.VPS_HOST_FINGERPRINT }}
           script: |
             set -euo pipefail
-            mkdir -p "${{ env.deployPath }}"
-            rm -rf "${{ env.deployPath }}"/*
-            tar -xzf /tmp/cloakgate-deploy.tgz -C "${{ env.deployPath }}"
-            rm -f /tmp/cloakgate-deploy.tgz
 
-            # 避免 source nvm.sh（在严格模式下可能触发 unbound variable）。
+            if [ ! -d "${{ env.deployPath }}/.git" ]; then
+              echo "deployPath 不是 git 仓库: ${{ env.deployPath }}"
+              exit 1
+            fi
+
+            cd "${{ env.deployPath }}"
+            git fetch origin "${{ github.ref_name }}"
+            git checkout "${{ github.ref_name }}"
+            git pull --ff-only origin "${{ github.ref_name }}"
+
+            # 尝试加载 nvm，以保证 node/npm/pm2 在非交互 shell 中可用。
+            export NVM_DIR="$HOME/.nvm"
+            if [ -s "$NVM_DIR/nvm.sh" ]; then
+              . "$NVM_DIR/nvm.sh"
+            fi
+
             if ! command -v node >/dev/null 2>&1; then
               latest_node_dir="$(ls -1d "$HOME/.nvm/versions/node/"*/ 2>/dev/null | sort -V | tail -n 1 || true)"
               if [ -n "${latest_node_dir:-}" ]; then
@@ -91,12 +76,14 @@ jobs:
               fi
             fi
             command -v node >/dev/null 2>&1 || { echo "node not found on server"; exit 1; }
+            command -v npm >/dev/null 2>&1 || { echo "npm not found on server"; exit 1; }
+            command -v pm2 >/dev/null 2>&1 || { echo "pm2 not found on server"; exit 1; }
 
-            cd "${{ env.deployPath }}/packages/javascript-package"
+            cd packages/javascript-package
             npm ci --omit=dev
 
             cd "${{ env.deployPath }}"
-            pm2 describe "${{ env.appName }}" >/dev/null 2>&1 && pm2 restart "${{ env.appName }}" || pm2 start ecosystem.config.cjs --only "${{ env.appName }}"
+            pm2 describe "${{ env.appName }}" >/dev/null 2>&1 && npm run pm2:restart || npm run pm2:start
             sleep 3
             curl -fsS "http://localhost:${{ env.servicePort }}/health"
             pm2 save

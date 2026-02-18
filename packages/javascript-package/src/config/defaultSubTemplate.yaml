@@ -119,8 +119,6 @@ proxy-groups:
     type: select
     use:
       - main
-    proxies:
-      - DIRECT
 
 rules:
   # ============================================
