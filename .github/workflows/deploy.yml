@@ -58,6 +58,7 @@ jobs:
       - name: Create release archive
         run: |
           set -euo pipefail
+          archive_file="/tmp/release-${{ github.sha }}.tar.gz"
           tar \
             --exclude=".git" \
             --exclude="node_modules" \
@@ -65,7 +66,8 @@ jobs:
             --exclude="logs" \
             --exclude=".env" \
             --exclude="release.tar.gz" \
-            -czf release.tar.gz .
+            -czf "$archive_file" .
+          mv "$archive_file" release.tar.gz
 
       - name: Upload release archive
         uses: actions/upload-artifact@v4
