@@ -1,5 +1,5 @@
-import js from '@eslint/js';
-import globals from 'globals';
+import js from '@eslint/js'
+import globals from 'globals'
 
 export default [
   js.configs.recommended,
@@ -19,9 +19,10 @@ export default [
       'no-var': 'error',
       'eqeqeq': ['error', 'always'],
       'curly': ['error', 'all'],
+      'semi': ['error', 'never'],
     },
   },
   {
     ignores: ['node_modules/**', 'coverage/**'],
   },
-];
+]
