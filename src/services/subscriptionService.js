@@ -5,7 +5,6 @@ import crypto from 'crypto'
 import db from '../db/index.js'
 import { replaceNodesByTokenInSameTransaction, deleteNodesByToken } from './subscriptionNodeService.js'
 import { clearTokenIps } from './ipTracker.js'
-import { clearIpHistory } from './ipHistoryService.js'
 
 /**
  * 生成随机 Token
@@ -184,6 +183,5 @@ export const deleteSubscriptionWithRelated = db.transaction((token) => {
   }
   clearTokenIps(token)
   deleteNodesByToken(token)
-  clearIpHistory(token)
   return true
 })

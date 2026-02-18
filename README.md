@@ -101,8 +101,6 @@ npm run dev
 | `/admin/subscription/:token`              | DELETE | 删除订阅                  |
 | `/admin/subscription/:token/boundIps`     | GET    | 查看当前绑定 IP           |
 | `/admin/subscription/:token/boundIps`     | DELETE | 解绑全部 IP 或解绑单个 IP |
-| `/admin/subscription/:token/ip-history`   | GET    | 查看 IP 历史              |
-| `/admin/subscription/:token/ip-history`   | DELETE | 清空 IP 历史              |
 
 ### 示例
 
