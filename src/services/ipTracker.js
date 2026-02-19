@@ -89,7 +89,9 @@ export function removeTokenIp(token, ip) {
  */
 export const checkAndTouch = db.transaction((token, ip) => {
   const existing = db.prepare('SELECT id FROM ip_bindings WHERE token = ? AND ip = ?').get(token, ip)
-  if (!existing) return false
+  if (!existing) {
+    return false
+  }
   db.prepare('UPDATE ip_bindings SET last_seen_at = CURRENT_TIMESTAMP WHERE token = ? AND ip = ?').run(token, ip)
   return true
 })
