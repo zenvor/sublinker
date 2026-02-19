@@ -4,6 +4,7 @@
 import Router from '@koa/router'
 import { renderSubYaml } from '../services/yamlService.js'
 import { getSubscription, isSubscriptionValid } from '../services/subscriptionService.js'
+import { updateAndCheck, getActiveIps } from '../services/ipTracker.js'
 import { ensureSupportedClientUa } from '../utils/clientUa.js'
 import { logInfo, logError } from '../utils/logUtil.js'
 
@@ -39,7 +40,28 @@ router.get('/sub', async (ctx) => {
     return
   }
 
-  logInfo(`[Sub] 返回订阅: token=${token.slice(0, 8)}... ua=${userAgent.slice(0, 30)}`)
+  // 获取客户端真实 IP，在此阶段完成 IP 绑定
+  const clientIp = ctx.realIp || ctx.ip
+
+  let allowed = false
+  try {
+    allowed = updateAndCheck(token, clientIp, subscription.max_ips)
+  } catch (err) {
+    logError(`[Sub] IP绑定检查异常: token=${token.slice(0, 8)}... ip=${clientIp}`, err)
+    ctx.fail(500, '服务内部错误')
+    return
+  }
+
+  if (!allowed) {
+    const activeIps = getActiveIps(token)
+    logInfo(
+      `[Sub] IP超限拒绝: token=${token.slice(0, 8)}... ip=${clientIp} bound=${activeIps.length}/${subscription.max_ips}`,
+    )
+    ctx.fail(403, 'IP 数量已达上限，订阅导入被拒绝')
+    return
+  }
+
+  logInfo(`[Sub] 返回订阅: token=${token.slice(0, 8)}... ip=${clientIp} ua=${userAgent.slice(0, 30)}`)
 
   try {
     const apiDomain = resolveApiDomain(ctx)
