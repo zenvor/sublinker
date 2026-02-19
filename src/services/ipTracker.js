@@ -79,3 +79,17 @@ export function removeTokenIp(token, ip) {
   const info = db.prepare('DELETE FROM ip_bindings WHERE token = ? AND ip = ?').run(token, ip)
   return info.changes > 0
 }
+
+/**
+ * 检查 IP 是否已绑定，若已绑定则更新 last_seen_at（不新增绑定）
+ * 用于 /provider 等下游接口：IP 必须在 /sub 阶段绑定，此处仅做校验
+ * @param {string} token - Token 字符串
+ * @param {string} ip - 客户端 IP
+ * @returns {boolean} IP 是否已绑定
+ */
+export const checkAndTouch = db.transaction((token, ip) => {
+  const existing = db.prepare('SELECT id FROM ip_bindings WHERE token = ? AND ip = ?').get(token, ip)
+  if (!existing) return false
+  db.prepare('UPDATE ip_bindings SET last_seen_at = CURRENT_TIMESTAMP WHERE token = ? AND ip = ?').run(token, ip)
+  return true
+})
