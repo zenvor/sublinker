@@ -36,7 +36,8 @@ router.get('/health', (ctx) => {
   try {
     db.prepare('SELECT 1').get()
     ctx.body = 'OK'
-  } catch {
+  } catch (error) {
+    logError('健康检查失败:', error)
     ctx.status = 503
     ctx.body = 'DB unavailable'
   }

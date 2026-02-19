@@ -104,8 +104,11 @@ db.exec(`
 // 兼容旧数据库：subscriptions 表可能缺少 updated_at 列
 try {
   db.exec('ALTER TABLE subscriptions ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP')
-} catch {
-  // 列已存在，忽略
+} catch (error) {
+  const message = String(error?.message || '')
+  if (!message.includes('duplicate column name')) {
+    throw error
+  }
 }
 
 export default db
