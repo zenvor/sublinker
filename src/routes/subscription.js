@@ -10,7 +10,7 @@ import {
   getSubscription,
   getSubscriptionCount,
 } from '../services/subscriptionService.js'
-import { getActiveIps, clearTokenIps, removeTokenIp } from '../services/ipTracker.js'
+import { getActiveIps, getActiveIpCountsByTokens, clearTokenIps, removeTokenIp } from '../services/ipTracker.js'
 import { authMiddleware } from '../middlewares/authMiddleware.js'
 import { parseVlessNodeLinks } from '../services/vlessParserService.js'
 import {
@@ -96,11 +96,12 @@ router.get('/subscription', async (ctx) => {
   const total = getSubscriptionCount()
   const tokens = subscriptions.map((item) => item.token)
   const nodeCountMap = getNodeCountsByTokens(tokens)
+  const ipCountMap = getActiveIpCountsByTokens(tokens)
 
   // 为每个订阅添加已绑定 IP 数量
   const rows = subscriptions.map((sub) => ({
     ...sub,
-    activeIpCount: getActiveIps(sub.token).length,
+    activeIpCount: ipCountMap[sub.token] || 0,
     nodeCount: nodeCountMap[sub.token] || 0,
   }))
 
@@ -185,13 +186,11 @@ router.put('/subscription/:token', async (ctx) => {
     return
   }
 
-  if (hasSubscriptionUpdates || parsedNodes !== null) {
-    try {
-      updateSubscriptionWithNodes(token, { remark, maxIps, status, expiredAt }, parsedNodes, hasSubscriptionUpdates)
-    } catch (error) {
-      ctx.fail(400, error.message || '节点保存失败')
-      return
-    }
+  try {
+    updateSubscriptionWithNodes(token, { remark, maxIps, status, expiredAt }, parsedNodes, hasSubscriptionUpdates)
+  } catch (error) {
+    ctx.fail(400, error.message || '节点保存失败')
+    return
   }
 
   ctx.success(null, '订阅更新成功')
