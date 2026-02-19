@@ -105,12 +105,20 @@ db.exec(`
 
 // 兼容旧数据库：subscriptions 表可能缺少 updated_at 列
 try {
-  db.exec('ALTER TABLE subscriptions ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP')
+  db.exec('ALTER TABLE subscriptions ADD COLUMN updated_at DATETIME')
 } catch (error) {
   const message = String(error?.message || '')
   if (!message.includes(DUPLICATE_COLUMN_ERROR_MSG)) {
     throw error
   }
 }
+
+// SQLite 的 ALTER TABLE ADD COLUMN 不支持 CURRENT_TIMESTAMP 这类非常量默认值，
+// 因此统一在迁移后补齐历史数据，避免旧记录出现空值。
+db.exec(`
+  UPDATE subscriptions
+  SET updated_at = COALESCE(updated_at, created_at, CURRENT_TIMESTAMP)
+  WHERE updated_at IS NULL
+`)
 
 export default db
