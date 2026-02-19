@@ -47,8 +47,8 @@ function parseSingleVlessLine(rawLink, index) {
 
   try {
     parsedUrl = new URL(rawLink)
-  } catch {
-    throw new Error(`第 ${lineNo} 行链接无效：URL 格式错误`)
+  } catch (error) {
+    throw new Error(`第 ${lineNo} 行链接无效：URL 格式错误`, { cause: error })
   }
 
   if (parsedUrl.protocol !== 'vless:') {
@@ -150,7 +150,11 @@ function decodeSafely(value) {
 
   try {
     return decodeURIComponent(value)
-  } catch {
-    return value
+  } catch (error) {
+    if (error instanceof URIError) {
+      return value
+    }
+
+    throw error
   }
 }
