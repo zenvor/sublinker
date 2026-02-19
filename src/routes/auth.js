@@ -81,15 +81,7 @@ router.post('/login', async (ctx) => {
  * 需要认证
  */
 router.get('/info', authMiddleware(), async (ctx) => {
-  // 此接口需要 authMiddleware 保护
-  // ctx.state.user 由中间件设置
   const user = ctx.state.user
-
-  if (!user) {
-    ctx.fail(401, '未登录')
-    return
-  }
-
   ctx.success({
     username: user.username,
     roles: [user.role],

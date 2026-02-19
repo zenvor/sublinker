@@ -4,17 +4,6 @@
 import db from '../db/index.js'
 
 /**
- * 替换指定订阅的所有节点
- * @param {string} token - 订阅 token
- * @param {Array<object>} nodes - 解析后的节点列表
- */
-export function replaceNodesByToken(token, nodes = []) {
-  const runInTransaction = db.transaction((targetToken, targetNodes) => replaceNodesByTokenInSameTransaction(targetToken, targetNodes))
-
-  runInTransaction(token, nodes)
-}
-
-/**
  * 在当前事务内替换节点（不自行开启事务）
  * @param {string} token - 订阅 token
  * @param {Array<object>} nodes - 解析后的节点列表
