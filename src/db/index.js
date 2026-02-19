@@ -9,6 +9,8 @@ import { fileURLToPath } from 'url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
+const DUPLICATE_COLUMN_ERROR_MSG = 'duplicate column name'
+
 // 数据库文件路径（位于项目根目录 data 文件夹）
 // src/db -> ../../data
 const defaultDbPath = path.join(__dirname, '../../data/sublinker.db')
@@ -106,7 +108,7 @@ try {
   db.exec('ALTER TABLE subscriptions ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP')
 } catch (error) {
   const message = String(error?.message || '')
-  if (!message.includes('duplicate column name')) {
+  if (!message.includes(DUPLICATE_COLUMN_ERROR_MSG)) {
     throw error
   }
 }
