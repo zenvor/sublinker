@@ -155,7 +155,26 @@ jobs:
             cd "$deploy_path"
             npm ci --omit=dev
 
-            pm2 startOrReload ecosystem.config.cjs --update-env
+            # 根据 PM2 当前进程情况决定启动策略：
+            # 1) 无进程：直接 start
+            # 2) 有进程且包含当前应用：使用 ecosystem restart，确保配置同步
+            # 3) 有进程但不包含当前应用：start
+            pm2_process_count="$(pm2 jlist | node -e "let data='';process.stdin.on('data',chunk=>data+=chunk);process.stdin.on('end',()=>{try{const list=JSON.parse(data);process.stdout.write(String(Array.isArray(list)?list.length:0));}catch{process.stdout.write('0');}})")"
+            if [ "$pm2_process_count" -eq 0 ]; then
+              echo "PM2 进程列表为空，执行首次启动"
+              pm2 start ecosystem.config.cjs --only "${{ env.appName }}" --update-env
+            else
+              app_exists="$(pm2 jlist | node -e "const appName=process.argv[1];let data='';process.stdin.on('data',chunk=>data+=chunk);process.stdin.on('end',()=>{try{const list=JSON.parse(data);const exists=Array.isArray(list)&&list.some(item=>item&&item.name===appName);process.stdout.write(exists?'1':'0');}catch{process.stdout.write('0');}})" "${{ env.appName }}")"
+              if [ "$app_exists" = "1" ]; then
+                echo "检测到 ${{ env.appName }} 已存在，执行基于 ecosystem 的重启"
+                pm2 restart ecosystem.config.cjs --only "${{ env.appName }}" --update-env
+              else
+                echo "PM2 当前有进程，但不存在 ${{ env.appName }}，执行启动"
+                pm2 start ecosystem.config.cjs --only "${{ env.appName }}" --update-env
+              fi
+            fi
             sleep 3
-            curl -fsS "http://localhost:${{ env.servicePort }}/health"
+            # 健康检查端口优先读取线上 .env 的 PORT，缺失时回退到 workflow 默认值。
+            health_port="$(node -e "const fs=require('fs');let port='${{ env.servicePort }}';if(fs.existsSync('.env')){for(const line of fs.readFileSync('.env','utf8').split(/\r?\n/)){const match=line.match(/^\s*PORT\s*=\s*(.+)\s*$/);if(match){port=match[1].replace(/^['\"]|['\"]$/g,'');break;}}}process.stdout.write(port);")"
+            curl -fsS "http://localhost:${health_port}/health"
             pm2 save
