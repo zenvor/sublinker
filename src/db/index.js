@@ -31,6 +31,7 @@ db.exec(`
     max_ips INTEGER DEFAULT 1,
     status TEXT NOT NULL DEFAULT 'active',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     expired_at DATETIME
   );
 
@@ -87,6 +88,10 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_subscription_nodes_token_sort ON subscription_nodes(token, sort_order);
 
   -- updated_at 自动维护触发器
+  CREATE TRIGGER IF NOT EXISTS trg_subscriptions_updated_at
+  AFTER UPDATE ON subscriptions
+  BEGIN UPDATE subscriptions SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id; END;
+
   CREATE TRIGGER IF NOT EXISTS trg_subscription_nodes_updated_at
   AFTER UPDATE ON subscription_nodes
   BEGIN UPDATE subscription_nodes SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id; END;
@@ -95,5 +100,12 @@ db.exec(`
   AFTER UPDATE ON admins
   BEGIN UPDATE admins SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id; END;
 `)
+
+// 兼容旧数据库：subscriptions 表可能缺少 updated_at 列
+try {
+  db.exec('ALTER TABLE subscriptions ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP')
+} catch {
+  // 列已存在，忽略
+}
 
 export default db
