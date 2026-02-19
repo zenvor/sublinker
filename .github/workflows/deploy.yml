@@ -173,8 +173,15 @@ jobs:
                 pm2 start ecosystem.config.cjs --only "${{ env.appName }}" --update-env
               fi
             fi
-            sleep 3
             # 健康检查端口优先读取线上 .env 的 PORT，缺失时回退到 workflow 默认值。
-            health_port="$(node -e "const fs=require('fs');let port='${{ env.servicePort }}';if(fs.existsSync('.env')){for(const line of fs.readFileSync('.env','utf8').split(/\r?\n/)){const match=line.match(/^\s*PORT\s*=\s*(.+)\s*$/);if(match){port=match[1].replace(/^['\"]|['\"]$/g,'');break;}}}process.stdout.write(port);")"
-            curl -fsS "http://localhost:${health_port}/health"
+            health_port="$(node -e "const fs=require('fs');let port='${{ env.servicePort }}';if(fs.existsSync('.env')){for(const line of fs.readFileSync('.env','utf8').split(/\r?\n/)){const match=line.match(/^\s*PORT\s*=\s*(.+)\s*$/);if(match){const parsed=match[1].split('#')[0].trim().replace(/^['\"]|['\"]$/g,'');if(parsed){port=parsed;}break;}}}process.stdout.write(port);")"
+            health_url="http://127.0.0.1:${health_port}/health"
+            echo "健康检查地址: $health_url"
+            if ! curl -fsS --retry 15 --retry-delay 2 --retry-connrefused "$health_url"; then
+              echo "健康检查失败，输出 PM2 诊断信息"
+              pm2 status || true
+              pm2 describe "${{ env.appName }}" || true
+              pm2 logs "${{ env.appName }}" --lines 120 --nostream || true
+              exit 1
+            fi
             pm2 save
