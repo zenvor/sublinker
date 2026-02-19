@@ -4,7 +4,6 @@
   <img src="https://img.shields.io/badge/Node.js-18+-339933?logo=node.js&logoColor=white" alt="Node.js">
   <img src="https://img.shields.io/badge/Koa-3.x-33333D?logo=koa&logoColor=white" alt="Koa">
   <img src="https://img.shields.io/badge/SQLite-3-003B57?logo=sqlite&logoColor=white" alt="SQLite">
-  <img src="https://img.shields.io/badge/License-ISC-blue" alt="License">
 </p>
 
 Clash 订阅分发服务，支持 **Token 验证** 和 **IP 绑定并发控制**。通过限制同一订阅可绑定的 IP 数量，有效防止订阅链接被多人共享滥用。
