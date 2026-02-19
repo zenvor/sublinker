@@ -12,8 +12,8 @@ const router = new Router()
 
 /**
  * GET /sub?t=xxx
- * 返回一级订阅 YAML
- * 注意: 此接口仅返回订阅配置，不进行 IP 绑定。IP 绑定在 /provider 接口中进行。
+ * 返回一级订阅 YAML，同时完成 IP 绑定
+ * 注意: IP 绑定在此接口完成，/provider 接口仅做 IP 校验，不新增绑定
  */
 router.get('/sub', async (ctx) => {
   const token = ctx.query.t

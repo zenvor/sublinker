@@ -59,13 +59,28 @@ export function getActiveIps(token) {
 }
 
 /**
- * 获取指定 Token 的已绑定 IP 数量
- * @param {string} token - Token 字符串
- * @returns {number} 已绑定 IP 数量
+ * 批量获取多个 Token 的已绑定 IP 数量
+ * @param {Array<string>} tokens - token 列表
+ * @returns {Record<string, number>} token → 绑定 IP 数量 的映射
  */
-export function getActiveIpCount(token) {
-  const result = db.prepare('SELECT COUNT(*) as count FROM ip_bindings WHERE token = ?').get(token)
-  return result?.count || 0
+export function getActiveIpCountsByTokens(tokens = []) {
+  if (!tokens.length) {
+    return {}
+  }
+
+  const placeholders = tokens.map(() => '?').join(', ')
+  const rows = db.prepare(`
+    SELECT token, COUNT(*) as count
+    FROM ip_bindings
+    WHERE token IN (${placeholders})
+    GROUP BY token
+  `).all(...tokens)
+
+  const countMap = {}
+  rows.forEach((row) => {
+    countMap[row.token] = row.count
+  })
+  return countMap
 }
 
 /**

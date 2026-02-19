@@ -3,16 +3,15 @@
 
 import crypto from 'crypto'
 import db from '../db/index.js'
-import { replaceNodesByTokenInSameTransaction, deleteNodesByToken } from './subscriptionNodeService.js'
-import { clearTokenIps } from './ipTracker.js'
+import { replaceNodesByTokenInSameTransaction } from './subscriptionNodeService.js'
 
 /**
  * 生成随机 Token
- * @param {number} length - Token 长度（默认 32）
+ * @param {number} length - Token 长度（默认 32，hex 字符）
  * @returns {string}
  */
 export function generateToken(length = 32) {
-  return crypto.randomBytes(length).toString('hex').slice(0, length)
+  return crypto.randomBytes(Math.ceil(length / 2)).toString('hex').slice(0, length)
 }
 
 /**
@@ -175,13 +174,8 @@ export const updateSubscriptionWithNodes = db.transaction((token, updates, parse
 
 /**
  * 删除订阅及关联数据（事务）
+ * ip_bindings 和 subscription_nodes 均设有 ON DELETE CASCADE，随订阅一并删除
  */
 export const deleteSubscriptionWithRelated = db.transaction((token) => {
-  const deleted = deleteSubscription(token)
-  if (!deleted) {
-    return false
-  }
-  clearTokenIps(token)
-  deleteNodesByToken(token)
-  return true
+  return deleteSubscription(token)
 })
