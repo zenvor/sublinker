@@ -53,8 +53,8 @@ geo-update-interval: 24
 # 自定义 GEO 下载地址 (Loyalsoldier 增强版)
 # 若 jsDelivr 不可用可改用: fastly.jsdelivr.net 或 raw.githubusercontent.com
 geox-url:
-  geoip: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geoip.dat'
-  geosite: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geosite.dat'
+  geoip: '__API_DOMAIN__/geox/geoip.dat'
+  geosite: '__API_DOMAIN__/geox/geosite.dat'
 
 # DNS 配置 - 对齐 v2rayN 的 DNS 行为
 dns:

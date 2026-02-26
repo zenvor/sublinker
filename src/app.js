@@ -16,6 +16,8 @@ import authRouter from './routes/auth.js'
 import subRouter from './routes/sub.js'
 import providerRouter from './routes/provider.js'
 import subscriptionRouter from './routes/subscription.js'
+import geoxRouter from './routes/geox.js'
+import { startGeoxScheduler } from './services/geoxSyncService.js'
 import { logError, logInfo } from './utils/logUtil.js'
 import db from './db/index.js'
 
@@ -57,12 +59,19 @@ app.use(authRouter.allowedMethods())
 app.use(subscriptionRouter.routes())
 app.use(subscriptionRouter.allowedMethods())
 
+// GeoX 数据文件下载路由
+app.use(geoxRouter.routes())
+app.use(geoxRouter.allowedMethods())
+
 app.use(router.routes())
 app.use(router.allowedMethods())
 
 // 启动服务
 initAdmin()
   .then(() => {
+    // 启动 GeoX 数据文件定时同步
+    startGeoxScheduler()
+
     app.listen(PORT, () => {
       logInfo(`服务启动完成，端口: ${PORT}`)
     })

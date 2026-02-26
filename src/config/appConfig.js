@@ -29,3 +29,18 @@ const rawLogLevel = String(process.env.LOG_LEVEL || 'info').toLowerCase()
 const validLogLevels = ['error', 'warn', 'info', 'debug']
 export const LOG_LEVEL = validLogLevels.includes(rawLogLevel) ? rawLogLevel : 'info'
 
+// GeoX 数据文件配置
+// 项目根目录
+const rootDir = path.join(__dirname, '../..')
+
+// GeoX 数据文件存储目录
+export const geoxDir = path.join(rootDir, 'data/geox')
+
+// GeoX 同步间隔（毫秒），默认 24 小时
+export const geoxSyncInterval = 24 * 60 * 60 * 1000
+
+// GeoX 上游源地址
+export const geoxSources = {
+  geoip: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geoip.dat',
+  geosite: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geosite.dat',
+}
