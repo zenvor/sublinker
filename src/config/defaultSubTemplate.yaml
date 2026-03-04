@@ -174,17 +174,8 @@ rules:
   # 中国域名 → 直连 (geosite:cn)
   - GEOSITE,cn,DIRECT
 
-  # 私有 IP → 直连
-  # 注意：不使用 GEOIP,private 是因为该 country code 仅在 Loyalsoldier 增强版 GeoIP.dat 中存在。
-  # 首次导入时客户端尚未下载自定义 geo 文件，使用内置标准 GeoIP.dat 会报 "country code private not found"。
-  # 改用硬编码 IP-CIDR 规则，无需 geo 文件即可生效，彻底规避冷启动报错。
-  - IP-CIDR,127.0.0.0/8,DIRECT,no-resolve
-  - IP-CIDR,10.0.0.0/8,DIRECT,no-resolve
-  - IP-CIDR,172.16.0.0/12,DIRECT,no-resolve
-  - IP-CIDR,192.168.0.0/16,DIRECT,no-resolve
-  - IP-CIDR,100.64.0.0/10,DIRECT,no-resolve
-  - IP-CIDR,169.254.0.0/16,DIRECT,no-resolve
-  - IP-CIDR,224.0.0.0/4,DIRECT,no-resolve
+  # 私有/局域网 IP → 直连 (mihomo 推荐写法)
+  - GEOIP,lan,DIRECT,no-resolve
 
   # 中国 IP → 直连 (geoip:cn)
   - GEOIP,CN,DIRECT,no-resolve
