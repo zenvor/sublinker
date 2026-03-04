@@ -17,8 +17,8 @@ global-client-fingerprint: chrome
 tcp-concurrent: true
 unified-delay: true
 
-# 禁用 IPv6 以防止 macOS 下的流量泄漏
-ipv6: false
+# TUN 模式下 auto-route 已接管全部 IPv6 流量，开启 IPv6 不会造成泄漏
+ipv6: true
 
 # 核心 TUN 配置 - 确保在 macOS 下自动路由和接管 DNS
 tun:
@@ -60,14 +60,14 @@ geox-url:
 dns:
   enable: true
   listen: 0.0.0.0:53
-  ipv6: false
+  ipv6: true
   enhanced-mode: fake-ip
   cache-algorithm: arc
   prefer-h3: false
   fake-ip-range: 198.18.0.1/16
   fake-ip-filter:
-    - '*.lan'
-    - '*.local'
+    - '+.lan'
+    - '+.local'
     - localhost.ptlogin2.qq.com
 
   # 用于解析 DoH/DoT 域名的 DNS，必须为纯 IP
@@ -106,7 +106,8 @@ proxy-providers:
     url: '__API_DOMAIN__/provider?t=__TOKEN__'
     path: ./providers/main.yaml
     interval: 600
-    format: yaml
+    override:
+      ip-version: ipv6-prefer
     health-check:
       enable: true
       url: https://cp.cloudflare.com/generate_204
@@ -163,14 +164,27 @@ rules:
   # 中国顶级域名 → 直连
   - GEOSITE,tld-cn,DIRECT
 
+  # 非中国域名 → 代理 (geosite:geolocation-!cn)
+  # 注意：此规则必须放在 geosite:cn 前面，这是针对 Loyalsoldier 数据集的正确做法，并非违反 mihomo 规范。
+  # 原因：Loyalsoldier 将 apple.china.conf、google.china.conf 等域名同时收录进了 geolocation-!cn，
+  # 若 cn → DIRECT 放在前面，这些域名会被提前匹配为直连，导致行为异常。
+  # mihomo 本身不强制两者顺序，顺序差异属于语义层面，取决于所用的 geo 数据来源。
+  - GEOSITE,geolocation-!cn,PROXY
+
   # 中国域名 → 直连 (geosite:cn)
   - GEOSITE,cn,DIRECT
 
-  # 非中国域名 → 代理 (对齐 v2rayN geolocation-!cn)
-  - GEOSITE,geolocation-!cn,PROXY
-
-  # 私有 IP → 直连 (geoip:private)
-  - GEOIP,private,DIRECT,no-resolve
+  # 私有 IP → 直连
+  # 注意：不使用 GEOIP,private 是因为该 country code 仅在 Loyalsoldier 增强版 GeoIP.dat 中存在。
+  # 首次导入时客户端尚未下载自定义 geo 文件，使用内置标准 GeoIP.dat 会报 "country code private not found"。
+  # 改用硬编码 IP-CIDR 规则，无需 geo 文件即可生效，彻底规避冷启动报错。
+  - IP-CIDR,127.0.0.0/8,DIRECT,no-resolve
+  - IP-CIDR,10.0.0.0/8,DIRECT,no-resolve
+  - IP-CIDR,172.16.0.0/12,DIRECT,no-resolve
+  - IP-CIDR,192.168.0.0/16,DIRECT,no-resolve
+  - IP-CIDR,100.64.0.0/10,DIRECT,no-resolve
+  - IP-CIDR,169.254.0.0/16,DIRECT,no-resolve
+  - IP-CIDR,224.0.0.0/4,DIRECT,no-resolve
 
   # 中国 IP → 直连 (geoip:cn)
   - GEOIP,CN,DIRECT,no-resolve
