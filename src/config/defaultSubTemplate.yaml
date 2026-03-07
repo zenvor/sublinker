@@ -33,6 +33,8 @@ tun:
 # 开启嗅探器以在 TUN 模式下辅助解析域名
 sniffer:
   enable: true
+  force-dns-mapping: true
+  parse-pure-ip: true
   sniff:
     TLS:
       ports: [443, 8443]
@@ -130,11 +132,9 @@ rules:
   # 广告拦截 (可选，如需关闭删除此行)
   - GEOSITE,category-ads-all,REJECT
 
-  # AI 服务专项优化 (ChatGPT, Claude, Gemini) - 显式代理并拦截 QUIC 确保稳定
-  # 注意：拦截规则必须放在允许规则之前，否则会被 PROXY 规则抢先匹配
-  - AND,((NETWORK,UDP),(DST-PORT,443),(GEOSITE,openai)),REJECT
-  - AND,((NETWORK,UDP),(DST-PORT,443),(GEOSITE,anthropic)),REJECT
-  - AND,((NETWORK,UDP),(DST-PORT,443),(GEOSITE,google)),REJECT
+  # 客户端提前拦截非中国域名的 QUIC (UDP 443)，强制浏览器降级 TCP
+  # xtls-rprx-vision 服务端本身会拦截 UDP 443，此规则使浏览器立即降级，无需等待服务端拦截
+  - AND,((NETWORK,UDP),(DST-PORT,443),(GEOSITE,geolocation-!cn)),REJECT
 
   - GEOSITE,openai,PROXY
   - GEOSITE,anthropic,PROXY
