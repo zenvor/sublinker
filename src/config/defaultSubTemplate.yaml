@@ -33,7 +33,6 @@ sniffer:
     - "Mijia Cloud"
     - "+.push.apple.com"
 
-
 # GEO 数据模式: true 使用 .dat 文件，false 使用 .mmdb 文件
 geodata-mode: true
 
@@ -79,6 +78,11 @@ dns:
   fallback-filter:
     geoip: true
     geoip-code: CN
+
+  # 专门用于解析代理节点域名，使用国内 DoH，防止运营商劫持且移动数据下可靠
+  proxy-server-nameserver:
+    - https://doh.pub/dns-query
+    - https://dns.alidns.com/dns-query
 
   # 按域名指定 DNS
   nameserver-policy:
