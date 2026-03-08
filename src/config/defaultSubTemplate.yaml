@@ -17,6 +17,9 @@ global-client-fingerprint: chrome
 tcp-concurrent: true
 unified-delay: true
 
+# 开启 IPv6：允许 mihomo 内核建立 IPv6 出站连接，配合 proxy-providers 的 ip-version: ipv6-prefer
+# 使 DMIT 节点走 CN2 GIA / CMIN2 IPv6 优化路由
+# 注意：dns.ipv6 单独设为 false，避免向客户端返回 AAAA 记录引发客户端侧直连
 ipv6: true
 
 sniffer:
@@ -27,8 +30,8 @@ sniffer:
     HTTP:
       ports: [80, 8080-8880]
       override-destination: true
-    QUIC:
-      ports: [443, 8443]
+  # QUIC 嗅探已移除：端口代理模式（无 TUN）无法捕获 UDP 流量，QUIC 嗅探永远不会触发
+  # 若启用 TUN 模式，可在此处恢复：QUIC: { ports: [443, 8443] }
   skip-domain:
     - "Mijia Cloud"
     - "+.push.apple.com"
@@ -50,7 +53,7 @@ geox-url:
 dns:
   enable: true
   listen: 127.0.0.1:1053
-  ipv6: true
+  ipv6: false
   enhanced-mode: fake-ip
   cache-algorithm: arc
   prefer-h3: false
@@ -59,6 +62,18 @@ dns:
     - '+.lan'
     - '+.local'
     - localhost.ptlogin2.qq.com
+    # NTP 时间同步服务器：必须返回真实 IP，否则系统时间同步失败
+    - '+.pool.ntp.org'
+    - '+.time.windows.com'
+    - 'time.*.com'
+    - 'time.*.gov'
+    - 'time.*.edu.cn'
+    - 'time.*.apple.com'
+    - 'ntp.*.com'
+    # STUN/WebRTC：音视频通话（微信、腾讯会议等）需要真实 IP 建立点对点连接
+    - '+.stun.*.*'
+    - '+.stun.*.*.*'
+    - 'stun.l.google.com'
 
   # 用于解析 DoH/DoT 域名的 DNS，必须为纯 IP
   default-nameserver:
@@ -71,15 +86,24 @@ dns:
     - https://dns.alidns.com/dns-query
 
   # 海外 DNS 回退
+  # 853 端口（DoT）已被 GFW 全面封锁（自 2021 年起）；8.8.8.8/1.1.1.1 IP 在国内也被封
+  # 加 #PROXY 让 fallback 查询走代理通道，彻底绕过封锁
   fallback:
-    - tls://8.8.8.8:853
-    - tls://1.1.1.1:853
+    - https://8.8.8.8/dns-query#PROXY
+    - https://1.1.1.1/dns-query#PROXY
 
   fallback-filter:
     geoip: true
     geoip-code: CN
+    # 过滤 DNS 污染返回的保留/无效地址
+    ipcidr:
+      - 240.0.0.0/4
+    # GFW 已知被墙域名直接走 fallback，无需等 nameserver 的污染结果
+    geosite:
+      - gfw
 
-  # 专门用于解析代理节点域名，使用国内 DoH，防止运营商劫持且移动数据下可靠
+  # 专门用于解析代理节点域名（在代理建立之前运行，必须直接可达）
+  # 官方示例使用国内 DoH：proxy 尚未就绪时国内 DoH 比境外 DNS 更稳定可达
   proxy-server-nameserver:
     - https://doh.pub/dns-query
     - https://dns.alidns.com/dns-query
@@ -90,10 +114,12 @@ dns:
     'geosite:cn,private':
       - https://doh.pub/dns-query
       - https://dns.alidns.com/dns-query
-    # 被墙/非中国域名 + AI 服务 → 国外 DNS (含 github/docker 等，防污染)
-    'geosite:gfw,geolocation-!cn,google,anthropic,openai':
-      - tls://8.8.8.8:853
-      - tls://1.1.1.1:853
+    # 被墙/非中国域名 → 国外 DoH（走代理）
+    # 8.8.8.8/1.1.1.1 IP 在国内直接被封，#PROXY 让查询走代理通道
+    # google/anthropic/openai 已包含在 geolocation-!cn 中，无需重复列出
+    'geosite:gfw,geolocation-!cn':
+      - https://8.8.8.8/dns-query#PROXY
+      - https://1.1.1.1/dns-query#PROXY
 
 profile:
   store-selected: true
@@ -106,6 +132,7 @@ proxy-providers:
     path: ./providers/main.yaml
     interval: 86400
     override:
+      # DMIT 节点的 CN2 GIA / CMIN2 优化路由通过 IPv6 提供，ipv6-prefer 走优化线路
       ip-version: ipv6-prefer
     health-check:
       enable: true
@@ -129,8 +156,11 @@ rules:
   # 广告拦截 (可选，如需关闭删除此行)
   - GEOSITE,category-ads-all,REJECT
 
-  # 客户端提前拦截非中国域名的 QUIC (UDP 443)，强制浏览器降级 TCP
-  # xtls-rprx-vision 服务端本身会拦截 UDP 443，此规则使浏览器立即降级，无需等待服务端拦截
+  # 拦截非中国域名的 QUIC (UDP 443)，强制浏览器降级 TCP
+  # 注意：此规则仅在启用 TUN 模式时有效。无 TUN 的端口代理模式下，QUIC 为 UDP 流量，
+  # 不经过 HTTP/SOCKS5 代理端口，mihomo 不会收到这些包，此规则永远不触发。
+  # 此外，带 GEOSITE 子条件的精细化 QUIC 拦截存在已知 Bug (Issue #1367/2263)，
+  # 若需全局拦截建议改为：AND,((NETWORK,UDP),(DST-PORT,443)),REJECT
   - AND,((NETWORK,UDP),(DST-PORT,443),(GEOSITE,geolocation-!cn)),REJECT
 
   # 特殊代理规则 - 对齐 v2rayN (需要代理才能稳定访问)
