@@ -5,7 +5,7 @@
 
 port: 7890
 socks-port: 7891
-allow-lan: true
+allow-lan: false
 mode: rule
 log-level: info
 external-controller: 127.0.0.1:9090
@@ -17,24 +17,10 @@ global-client-fingerprint: chrome
 tcp-concurrent: true
 unified-delay: true
 
-# TUN 模式下 auto-route 已接管全部 IPv6 流量，开启 IPv6 不会造成泄漏
 ipv6: true
 
-# 核心 TUN 配置 - 确保在 macOS 下自动路由和接管 DNS
-tun:
-  enable: true
-  stack: mixed
-  auto-route: true
-  auto-detect-interface: true
-  dns-hijack:
-    - "any:53"
-    - "tcp://any:53"
-
-# 开启嗅探器以在 TUN 模式下辅助解析域名
 sniffer:
   enable: true
-  force-dns-mapping: true
-  parse-pure-ip: true
   sniff:
     TLS:
       ports: [443, 8443]
@@ -43,6 +29,9 @@ sniffer:
       override-destination: true
     QUIC:
       ports: [443, 8443]
+  skip-domain:
+    - "Mijia Cloud"
+    - "+.push.apple.com"
 
 
 # GEO 数据模式: true 使用 .dat 文件，false 使用 .mmdb 文件
@@ -61,7 +50,7 @@ geox-url:
 # DNS 配置 - 对齐 v2rayN 的 DNS 行为
 dns:
   enable: true
-  listen: 0.0.0.0:53
+  listen: 127.0.0.1:1053
   ipv6: true
   enhanced-mode: fake-ip
   cache-algorithm: arc
@@ -102,12 +91,16 @@ dns:
       - tls://8.8.8.8:853
       - tls://1.1.1.1:853
 
+profile:
+  store-selected: true
+  store-fake-ip: true
+
 proxy-providers:
   main:
     type: http
     url: '__API_DOMAIN__/provider?t=__TOKEN__'
     path: ./providers/main.yaml
-    interval: 600
+    interval: 86400
     override:
       ip-version: ipv6-prefer
     health-check:
@@ -135,16 +128,6 @@ rules:
   # 客户端提前拦截非中国域名的 QUIC (UDP 443)，强制浏览器降级 TCP
   # xtls-rprx-vision 服务端本身会拦截 UDP 443，此规则使浏览器立即降级，无需等待服务端拦截
   - AND,((NETWORK,UDP),(DST-PORT,443),(GEOSITE,geolocation-!cn)),REJECT
-
-  - GEOSITE,openai,PROXY
-  - GEOSITE,anthropic,PROXY
-  - GEOSITE,google,PROXY
-  - DOMAIN-KEYWORD,openai,PROXY
-  - DOMAIN-KEYWORD,anthropic,PROXY
-  - DOMAIN-KEYWORD,google,PROXY
-  - DOMAIN-SUFFIX,chatgpt.com,PROXY
-  - DOMAIN-SUFFIX,claude.ai,PROXY
-  - DOMAIN-SUFFIX,gemini.google.com,PROXY
 
   # 特殊代理规则 - 对齐 v2rayN (需要代理才能稳定访问)
   - DOMAIN,www.icloud.com,PROXY
