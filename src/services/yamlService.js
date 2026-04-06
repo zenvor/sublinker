@@ -82,7 +82,7 @@ function buildClashProxy(node, index) {
     uuid: node.uuid,
     tls,
     servername: node.sni || node.server,
-    'client-fingerprint': node.fingerprint || 'random',
+    'client-fingerprint': node.fingerprint || 'chrome',
   }
 
   if (network && network !== 'tcp') {

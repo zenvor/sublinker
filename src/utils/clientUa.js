@@ -8,7 +8,11 @@
  */
 export function isSupportedClientUa(userAgent = '') {
   const userAgentLower = String(userAgent).toLowerCase()
-  return userAgentLower.includes('clash') || userAgentLower.includes('shadowrocket')
+  return (
+    userAgentLower.includes('clash') ||
+    userAgentLower.includes('shadowrocket') ||
+    userAgentLower.includes('mihomo')
+  )
 }
 
 /**
