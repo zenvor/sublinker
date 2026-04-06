@@ -1,5 +1,7 @@
 // 客户端 UA 校验工具
-// 仅允许 Clash / Shadowrocket 访问订阅相关接口
+// 仅允许 Clash / Shadowrocket / mihomo 访问订阅相关接口
+
+const SUPPORTED_CLIENT_KEYWORDS = ['clash', 'shadowrocket', 'mihomo']
 
 /**
  * 校验是否为支持的客户端 UA
@@ -8,7 +10,7 @@
  */
 export function isSupportedClientUa(userAgent = '') {
   const userAgentLower = String(userAgent).toLowerCase()
-  return userAgentLower.includes('clash') || userAgentLower.includes('shadowrocket')
+  return SUPPORTED_CLIENT_KEYWORDS.some(keyword => userAgentLower.includes(keyword))
 }
 
 /**

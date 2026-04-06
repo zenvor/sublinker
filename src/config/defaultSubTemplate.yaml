@@ -10,9 +10,6 @@ mode: rule
 log-level: info
 external-controller: 127.0.0.1:9090
 
-# 全局客户端指纹模拟 - 提高 ChatGPT/Cloudflare 兼容性
-global-client-fingerprint: chrome
-
 # 性能与稳定性优化
 tcp-concurrent: true
 unified-delay: true
