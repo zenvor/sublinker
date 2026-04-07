@@ -61,7 +61,7 @@ router.get('/sub', async (ctx) => {
     return
   }
 
-  logInfo(`[Sub] 返回订阅: token=${token.slice(0, 8)}... ip=${clientIp} ua=${userAgent.slice(0, 30)}`)
+  logInfo(`[Sub] 返回订阅: token=${token.slice(0, 8)}... ip=${clientIp} ua=${userAgent}`)
 
   try {
     const apiDomain = resolveApiDomain(ctx)

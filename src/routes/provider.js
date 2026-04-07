@@ -37,7 +37,7 @@ router.get('/provider', async (ctx) => {
   if (
     !ensureSupportedClientUa(ctx, {
       onFail: (targetCtx, userAgent) => {
-        logInfo(`[Provider] UA检测失败: token=${token.slice(0, 8)}... ua=${String(userAgent).slice(0, 30)}`)
+        logInfo(`[Provider] UA检测失败: token=${token.slice(0, 8)}... ua=${String(userAgent)}`)
         sendEmptyYaml(targetCtx, 403)
       },
     })
@@ -79,12 +79,14 @@ router.get('/provider', async (ctx) => {
   }
 
   // 通过：返回真实节点列表
-  logInfo(`[Provider] IP已绑定，允许访问: token=${token.slice(0, 8)}... ip=${clientIp}`)
+  const userAgent = ctx.headers['user-agent'] || ''
+  logInfo(`[Provider] IP已绑定，允许访问: token=${token.slice(0, 8)}... ip=${clientIp} ua=${userAgent}`)
 
   try {
     const yaml = generateProxiesYaml(token)
     ctx.type = 'application/x-yaml; charset=utf-8'
     ctx.body = yaml
+    logInfo(`[Provider] 返回节点: token=${token.slice(0, 8)}... size=${yaml.length}`)
   } catch (err) {
     logError('生成节点列表失败:', err)
     sendEmptyYaml(ctx, 500)

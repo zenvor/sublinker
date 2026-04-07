@@ -1,7 +1,7 @@
 # sublinker
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Node.js-18+-339933?logo=node.js&logoColor=white" alt="Node.js">
+  <img src="https://img.shields.io/badge/Node.js-24+-339933?logo=node.js&logoColor=white" alt="Node.js">
   <img src="https://img.shields.io/badge/Koa-3.x-33333D?logo=koa&logoColor=white" alt="Koa">
   <img src="https://img.shields.io/badge/SQLite-3-003B57?logo=sqlite&logoColor=white" alt="SQLite">
 </p>
@@ -55,6 +55,8 @@ sequenceDiagram
 ```
 
 ## 快速开始
+
+运行要求：**Node.js 24+**
 
 ### 本地开发
 

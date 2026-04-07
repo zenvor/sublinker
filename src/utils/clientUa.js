@@ -1,7 +1,7 @@
 // 客户端 UA 校验工具
 // 仅允许 Clash / Shadowrocket / mihomo 访问订阅相关接口
 
-const SUPPORTED_CLIENT_KEYWORDS = ['clash', 'shadowrocket', 'mihomo']
+const SUPPORTED_CLIENT_KEYWORDS = ['clash', 'shadowrocket', 'mihomo', 'verge']
 
 /**
  * 校验是否为支持的客户端 UA
