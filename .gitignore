@@ -24,3 +24,6 @@ public/
 
 # Rust build artifacts
 /target/
+
+# 任务记录
+tasks/
