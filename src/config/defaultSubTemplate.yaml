@@ -58,19 +58,19 @@ dns:
   fake-ip-filter:
     - '+.lan'
     - '+.local'
-    - localhost.ptlogin2.qq.com
-    # NTP 时间同步服务器：必须返回真实 IP，否则系统时间同步失败
-    - '+.pool.ntp.org'
-    - '+.time.windows.com'
-    - 'time.*.com'
-    - 'time.*.gov'
-    - 'time.*.edu.cn'
-    - 'time.*.apple.com'
-    - 'ntp.*.com'
+    - '+.ptlogin2.qq.com'
+    # NTP 时间同步：直接复用 Loyalsoldier/v2ray-rules-dat 内置的 NTP 类目
+    # 三个类目覆盖国际/国内/日本主流 NTP 服务器，比手写通配符更全
+    - 'geosite:category-ntp'
+    - 'geosite:category-ntp-cn'
+    - 'geosite:category-ntp-jp'
     # STUN/WebRTC：音视频通话（微信、腾讯会议等）需要真实 IP 建立点对点连接
-    - '+.stun.*.*'
-    - '+.stun.*.*.*'
-    - 'stun.l.google.com'
+    # geosite 上游无 STUN 类目，只能显式列举主流 STUN 主机
+    # 注意：mihomo 通配符 '+' 仅作前缀使用，'*' 仅匹配单段，不可与 '+' 组合
+    - '+.l.google.com'
+    - '+.miwifi.com'
+    - '+.voip.qq.com'
+    - 'stun.qq.com'
 
   # 用于解析 DoH/DoT 域名的 DNS，必须为纯 IP
   default-nameserver:
@@ -153,12 +153,9 @@ rules:
   # 广告拦截 (可选，如需关闭删除此行)
   - GEOSITE,category-ads-all,REJECT
 
-  # 拦截非中国域名的 QUIC (UDP 443)，强制浏览器降级 TCP
-  # 注意：此规则仅在启用 TUN 模式时有效。无 TUN 的端口代理模式下，QUIC 为 UDP 流量，
-  # 不经过 HTTP/SOCKS5 代理端口，mihomo 不会收到这些包，此规则永远不触发。
-  # 此外，带 GEOSITE 子条件的精细化 QUIC 拦截存在已知 Bug (Issue #1367/2263)，
-  # 若需全局拦截建议改为：AND,((NETWORK,UDP),(DST-PORT,443)),REJECT
-  - AND,((NETWORK,UDP),(DST-PORT,443),(GEOSITE,geolocation-!cn)),REJECT
+  # QUIC (UDP 443) 拦截规则：仅 TUN 模式下取消注释才有意义
+  # 端口代理模式不经手 UDP，规则永不触发；带 GEOSITE 子条件的 AND 还有上游 Bug (#1367/2263)
+  # - AND,((NETWORK,UDP),(DST-PORT,443)),REJECT
 
   # 特殊代理规则 - 对齐 v2rayN (需要代理才能稳定访问)
   - DOMAIN,www.icloud.com,PROXY
